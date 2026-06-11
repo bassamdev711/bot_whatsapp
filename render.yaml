@@ -1,0 +1,39 @@
+services:
+  # The Backend API Service
+  - type: web
+    name: sasabot-api
+    env: node
+    # Since it's a Turborepo, we install dependencies at root, then build the specific app
+    buildCommand: npm install && npx turbo run build --filter=@sasabot/api
+    startCommand: cd apps/api && node dist/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # The following must be set in Render dashboard:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+
+  # The Background Worker Service
+  - type: worker
+    name: sasabot-worker
+    env: node
+    buildCommand: npm install && npx turbo run build --filter=@sasabot/worker
+    startCommand: cd apps/worker && node dist/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # The following must be set in Render dashboard:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
