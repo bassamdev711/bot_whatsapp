@@ -12,6 +12,7 @@ import makeWASocket, {
 } from "@whiskeysockets/baileys";
 import pino from "pino";
 import QRCode from "qrcode";
+import { appendActivity, type ActivityEvent } from "@/lib/activity";
 import { applyAutomationRules } from "@/lib/automation";
 
 export type SessionStatus = "idle" | "connecting" | "awaiting_qr" | "awaiting_pairing" | "connected" | "error";
@@ -49,8 +50,10 @@ globalForWhatsApp.waslaBridge = state;
 const update = (values: Partial<BridgeState>) => Object.assign(state, values, { updatedAt: new Date().toISOString() });
 
 function logEvent(type: string, label: string, detail: string) {
-  state.events = [{ id: crypto.randomUUID(), type, label, detail, createdAt: new Date().toISOString() }, ...state.events].slice(0, 50);
+  const event: ActivityEvent = { id: crypto.randomUUID(), type, label, detail, createdAt: new Date().toISOString() };
+  state.events = [event, ...state.events].slice(0, 50);
   update({});
+  void appendActivity(event).catch(() => { /* Session controls remain available if disk logging is temporarily unavailable. */ });
 }
 
 function plainText(message: Record<string, unknown> | undefined) {

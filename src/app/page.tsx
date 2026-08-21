@@ -6,8 +6,10 @@
  */
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { ActivityPanel, type ActivityEvent } from "@/components/ActivityPanel";
 import { FlowPanel, type InteractiveFlow } from "@/components/FlowPanel";
 import { RulesPanel } from "@/components/RulesPanel";
+import { SettingsPanel } from "@/components/SettingsPanel";
 import { StatusPanel, type StatusSettings } from "@/components/StatusPanel";
 import {
   Activity,
@@ -19,7 +21,6 @@ import {
   Clock3,
   Eye,
   Hash,
-  ImageIcon,
   LayoutDashboard,
   Link2,
   Menu,
@@ -55,16 +56,12 @@ const navItems = [
   { label: "الإعدادات", icon: Settings2 },
 ];
 
-const eventRows = [
-  { icon: MessageCircle, title: "وصلت رسالة جديدة", detail: "قاعدة الرد التلقائي في وضع الاستعداد", time: "منذ دقيقتين", tone: "emerald" },
-  { icon: Eye, title: "حدث مشاهدة حالة", detail: "سيظهر هنا بعد تفعيل الرابط", time: "بانتظار الحدث", tone: "sky" },
-  { icon: ImageIcon, title: "استلام وسائط", detail: "احفظ الوسائط أو مرّرها إلى قاعدة", time: "جاهز", tone: "sand" },
-];
-
 type SessionSnapshot = {
   status: "idle" | "connecting" | "awaiting_qr" | "awaiting_pairing" | "connected" | "error";
   qrDataUrl: string | null;
   pairingCode: string | null;
+  phone?: string | null;
+  updatedAt?: string;
   error: string | null;
 };
 
@@ -110,6 +107,13 @@ export default function Home() {
   const [showFlowPanel, setShowFlowPanel] = useState(false);
   const [flowsBusy, setFlowsBusy] = useState(false);
   const [flowsError, setFlowsError] = useState<string | null>(null);
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const [showActivityPanel, setShowActivityPanel] = useState(false);
+  const [activityBusy, setActivityBusy] = useState(false);
+  const [activityError, setActivityError] = useState<string | null>(null);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [settingsBusy, setSettingsBusy] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -166,6 +170,22 @@ export default function Home() {
     return () => { active = false; };
   }, []);
 
+  const loadActivity = async () => {
+    try {
+      const response = await fetch("/api/activity", { cache: "no-store" });
+      if (!response.ok) throw new Error("تعذر تحميل سجل النشاط.");
+      setActivityEvents(await response.json() as ActivityEvent[]);
+    } catch (error) {
+      setActivityError(error instanceof Error ? error.message : "تعذر تحميل سجل النشاط.");
+    }
+  };
+
+  useEffect(() => {
+    const initialTimer = window.setTimeout(() => { void loadActivity(); }, 0);
+    const timer = window.setInterval(() => { void loadActivity(); }, 5000);
+    return () => { window.clearTimeout(initialTimer); window.clearInterval(timer); };
+  }, []);
+
   const startLink = async (method: "qr" | "pairing", phone?: string) => {
     setConnectionBusy(true);
     setConnectionError(null);
@@ -204,9 +224,43 @@ export default function Home() {
 
   const selectNav = (label: string) => {
     setActiveNav(label);
+    if (label === "نظرة عامة") { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    if (label === "الربط") { setShowLinkPanel(true); return; }
     if (label === "قواعد الأحداث") setShowRulePanel(true);
     if (label === "التدفقات التفاعلية") setShowFlowPanel(true);
     if (label === "إدارة الحالات") setShowStatusPanel(true);
+    if (label === "سجل النشاط") setShowActivityPanel(true);
+    if (label === "الإعدادات") setShowSettingsPanel(true);
+  };
+
+  const clearActivity = async () => {
+    setActivityBusy(true);
+    setActivityError(null);
+    try {
+      const response = await fetch("/api/activity", { method: "DELETE" });
+      if (!response.ok) throw new Error("تعذر مسح سجل النشاط.");
+      setActivityEvents([]);
+    } catch (error) {
+      setActivityError(error instanceof Error ? error.message : "تعذر مسح سجل النشاط.");
+    } finally {
+      setActivityBusy(false);
+    }
+  };
+
+  const resetSession = async () => {
+    setSettingsBusy(true);
+    setSettingsError(null);
+    try {
+      const response = await fetch("/api/whatsapp/session/reset", { method: "POST" });
+      const payload = await response.json() as SessionSnapshot & { error?: string };
+      if (!response.ok) throw new Error(payload.error || "تعذر إعادة ضبط الجلسة.");
+      setSession(payload);
+      window.setTimeout(() => { void loadActivity(); }, 350);
+    } catch (error) {
+      setSettingsError(error instanceof Error ? error.message : "تعذر إعادة ضبط الجلسة.");
+    } finally {
+      setSettingsBusy(false);
+    }
   };
 
   const persistFlows = async (nextFlows: InteractiveFlow[]) => {
@@ -272,7 +326,7 @@ export default function Home() {
           <div className="mb-5 flex items-center justify-between"><span className="grid h-8 w-8 place-items-center rounded-lg bg-white/10"><ShieldCheck size={17} /></span><span className="rounded-full bg-[#a6dfc7]/15 px-2 py-1 text-[10px] font-bold text-[#b5ead5]">خاص</span></div>
           <p className="text-sm font-bold">خصوصية الرابط</p>
           <p className="mt-1.5 text-xs leading-5 text-[#c9dbd2]">بيانات الجلسة تُحفظ في موصل آمن ولا تظهر في واجهة الحساب.</p>
-          <button className="mt-4 flex items-center gap-1 text-xs font-bold text-[#bce8d6] transition hover:gap-2">راجع الحماية <ChevronLeft size={14} /></button>
+          <button onClick={() => setShowSettingsPanel(true)} className="mt-4 flex items-center gap-1 text-xs font-bold text-[#bce8d6] transition hover:gap-2">راجع الحماية <ChevronLeft size={14} /></button>
         </div>
       </aside>
 
@@ -284,7 +338,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden items-center gap-2 rounded-full border border-[#d6e4db] bg-[#eff7f2] px-3 py-2 sm:flex"><Radio className="text-[#0e8065]" size={15} /><span className="text-xs font-bold text-[#277059]">نظام الأحداث جاهز</span></div>
-            <button className="relative grid h-10 w-10 place-items-center rounded-xl border border-[#d9ddd3] bg-[#fbfaf6] text-[#456459] transition hover:-translate-y-0.5 hover:shadow-sm" aria-label="التنبيهات"><BellRing size={18} /><span className="absolute left-2 top-2 h-2 w-2 rounded-full border-2 border-[#fbfaf6] bg-[#e57755]" /></button>
+            <button onClick={() => setShowActivityPanel(true)} className="relative grid h-10 w-10 place-items-center rounded-xl border border-[#d9ddd3] bg-[#fbfaf6] text-[#456459] transition hover:-translate-y-0.5 hover:shadow-sm" aria-label="التنبيهات"><BellRing size={18} />{activityEvents.length > 0 && <span className="absolute left-2 top-2 h-2 w-2 rounded-full border-2 border-[#fbfaf6] bg-[#e57755]" />}</button>
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#dcece4] text-sm font-bold text-[#0e8065]">ب</div>
           </div>
         </header>
@@ -316,9 +370,9 @@ export default function Home() {
           <section className="mt-7 grid gap-5 xl:grid-cols-[1.42fr_0.85fr]">
             <div className="luxury-card relative overflow-hidden rounded-[24px] border border-[#dde0d9] bg-[#fbfaf6] p-5 shadow-[0_12px_34px_rgba(51,71,60,0.045)] sm:p-6">
               <img src={assets.events} alt="مسارات أحداث تقنية ذهبية" className="pointer-events-none absolute -bottom-12 -left-12 h-52 w-52 object-cover opacity-25 mix-blend-screen" />
-              <div className="relative z-10 mb-6 flex items-start justify-between gap-4"><div><p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-[#6f897e]"><Activity size={15} className="text-[#0e8065]" /> تدفق الأحداث</p><h3 className="font-display text-xl font-bold tracking-[-0.04em] text-[#1d4237]">آخر ما وصل إلى نظامك</h3></div><button className="grid h-9 w-9 place-items-center rounded-xl text-[#799087] transition hover:bg-[#f0f2ec]" aria-label="خيارات السجل"><MoreHorizontal size={19} /></button></div>
-              <div className="relative z-10 space-y-1 before:absolute before:right-[22px] before:top-7 before:h-[calc(100%-56px)] before:w-px before:bg-[#d5e5dc]">{eventRows.map((event) => { const Icon = event.icon; const colors = event.tone === "emerald" ? "bg-[#e1f0e8] text-[#0e8065]" : event.tone === "sky" ? "bg-[#e5f2f5] text-[#438090]" : "bg-[#f6efdc] text-[#ad8740]"; return <div key={event.title} className="relative flex items-center gap-3 rounded-2xl p-3 transition hover:bg-[#f6f7f2]"><span className={`relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-xl ${colors}`}><Icon size={19} /></span><div className="min-w-0 flex-1"><p className="text-sm font-bold text-[#294d41]">{event.title}</p><p className="mt-1 truncate text-xs text-[#73877e]">{event.detail}</p></div><span className="font-mono text-[10px] text-[#98a69e]">{event.time}</span></div>; })}</div>
-              <button className="relative z-10 mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#cbdad0] py-3 text-xs font-bold text-[#39705e] transition hover:border-[#0e8065] hover:bg-[#eff7f2]">افتح سجل الأحداث <ArrowLeft size={15} /></button>
+              <div className="relative z-10 mb-6 flex items-start justify-between gap-4"><div><p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-[#6f897e]"><Activity size={15} className="text-[#0e8065]" /> تدفق الأحداث</p><h3 className="font-display text-xl font-bold tracking-[-0.04em] text-[#1d4237]">آخر ما وصل إلى نظامك</h3></div><button onClick={() => setShowActivityPanel(true)} className="grid h-9 w-9 place-items-center rounded-xl text-[#799087] transition hover:bg-[#f0f2ec]" aria-label="فتح سجل النشاط"><MoreHorizontal size={19} /></button></div>
+              <div className="relative z-10 space-y-1 before:absolute before:right-[22px] before:top-7 before:h-[calc(100%-56px)] before:w-px before:bg-[#d5e5dc]">{activityEvents.length > 0 ? activityEvents.slice(0, 3).map((event) => <div key={event.id} className="relative flex items-center gap-3 rounded-2xl p-3 transition hover:bg-[#f6f7f2]"><span className="relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#e1f0e8] text-[#0e8065]"><Activity size={19} /></span><div className="min-w-0 flex-1"><p className="text-sm font-bold text-[#294d41]">{event.label}</p><p className="mt-1 truncate text-xs text-[#73877e]">{event.detail}</p></div><span className="font-mono text-[10px] text-[#98a69e]">{new Intl.DateTimeFormat("ar-SA", { hour: "2-digit", minute: "2-digit" }).format(new Date(event.createdAt))}</span></div>) : <div className="rounded-2xl border border-dashed border-[#cbdad0] p-5 text-center text-xs leading-6 text-[#73877e]">لا توجد أحداث فعلية بعد. اربط الحساب لتظهر الرسائل والحالات وتنفيذ القواعد هنا.</div>}</div>
+              <button onClick={() => setShowActivityPanel(true)} className="relative z-10 mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#cbdad0] py-3 text-xs font-bold text-[#39705e] transition hover:border-[#0e8065] hover:bg-[#eff7f2]">افتح سجل الأحداث <ArrowLeft size={15} /></button>
             </div>
 
             <div className="luxury-card relative overflow-hidden rounded-[24px] border border-[#dde0d9] bg-[#f8f8f3] p-5 shadow-[0_12px_34px_rgba(51,71,60,0.045)] sm:p-6">
@@ -329,7 +383,7 @@ export default function Home() {
           </section>
 
           <section className="mt-5 grid gap-5 md:grid-cols-3"><MetricCard icon={Zap} label="قواعد مفعّلة" value={String(enabledRules).padStart(2, "0")} hint={enabledRules ? "تعمل عند وصول الحدث" : "افتح القواعد لتفعيل رد"} shade="emerald" /><MetricCard icon={Clock3} label="وقت الاستجابة" value="—" hint="يظهر بعد أول حدث" shade="sky" /><MetricCard icon={CircleCheck} label="جلسات متصلة" value={session.status === "connected" ? "01" : "00"} hint={session.status === "connected" ? "الجلسة تستقبل الأحداث" : "اربط أول حساب للبدء"} shade="sand" /></section>
-          <section className="mt-8 flex flex-col items-start justify-between gap-4 rounded-2xl border border-[#d9ded6] bg-[#e9ebe4] px-5 py-4 sm:flex-row sm:items-center"><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#d8e9df] text-[#0e8065]"><Sparkles size={17} /></span><p className="text-sm text-[#526c61]"><strong className="text-[#284a3e]">ملاحظة تشغيلية:</strong> تظل القواعد في الانتظار إلى أن تُنشأ جلسة ربط صالحة.</p></div><button className="flex items-center gap-1 text-xs font-bold text-[#39705e] hover:text-[#0e8065]">دليل الربط الآمن <ArrowLeft size={14} /></button></section>
+          <section className="mt-8 flex flex-col items-start justify-between gap-4 rounded-2xl border border-[#d9ded6] bg-[#e9ebe4] px-5 py-4 sm:flex-row sm:items-center"><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#d8e9df] text-[#0e8065]"><Sparkles size={17} /></span><p className="text-sm text-[#526c61]"><strong className="text-[#284a3e]">ملاحظة تشغيلية:</strong> تظل القواعد في الانتظار إلى أن تُنشأ جلسة ربط صالحة.</p></div><button onClick={() => setShowLinkPanel(true)} className="flex items-center gap-1 text-xs font-bold text-[#39705e] hover:text-[#0e8065]">دليل الربط الآمن <ArrowLeft size={14} /></button></section>
         </div>
       </main>
 
@@ -337,6 +391,8 @@ export default function Home() {
       {showRulePanel && <RulesPanel rules={rules} isBusy={rulesBusy} error={rulesError} onSave={(nextRules) => void persistRules(nextRules)} onClose={() => setShowRulePanel(false)} />}
       {showStatusPanel && <StatusPanel settings={statusSettings} isBusy={statusBusy} error={statusError} onSave={(nextSettings) => void persistStatusSettings(nextSettings)} onClose={() => setShowStatusPanel(false)} />}
       {showFlowPanel && <FlowPanel flows={flows} isBusy={flowsBusy} error={flowsError} onSave={(nextFlows) => void persistFlows(nextFlows)} onClose={() => setShowFlowPanel(false)} />}
+      {showActivityPanel && <ActivityPanel events={activityEvents} isBusy={activityBusy} error={activityError} onClear={() => void clearActivity()} onClose={() => setShowActivityPanel(false)} />}
+      {showSettingsPanel && <SettingsPanel status={session.status} phone={session.phone ?? null} updatedAt={session.updatedAt ?? ""} isBusy={settingsBusy} error={settingsError} onReset={() => void resetSession()} onOpenLink={() => { setShowSettingsPanel(false); setShowLinkPanel(true); }} onClose={() => setShowSettingsPanel(false)} />}
     </div>
   );
 }
