@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { RulesPanel } from "@/components/RulesPanel";
 import {
   Activity,
   ArrowLeft,
@@ -29,6 +30,7 @@ import {
   ScrollText,
   Settings2,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   X,
   Zap,
@@ -61,6 +63,18 @@ type SessionSnapshot = {
   error: string | null;
 };
 
+type ReplyRule = {
+  id: string;
+  name: string;
+  enabled: boolean;
+  event: "message.received";
+  contains: string;
+  targetPhone: string;
+  reply: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const emptySession: SessionSnapshot = { status: "idle", qrDataUrl: null, pairingCode: null, error: null };
 
 const qrCells = Array.from({ length: 169 }, (_, index) => {
@@ -74,11 +88,14 @@ export default function Home() {
   const [activeNav, setActiveNav] = useState("نظرة عامة");
   const [showLinkPanel, setShowLinkPanel] = useState(false);
   const [linkMethod, setLinkMethod] = useState<"qr" | "code">("qr");
-  const [rulesEnabled, setRulesEnabled] = useState(true);
   const [mobileNav, setMobileNav] = useState(false);
   const [session, setSession] = useState<SessionSnapshot>(emptySession);
   const [connectionBusy, setConnectionBusy] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [rules, setRules] = useState<ReplyRule[]>([]);
+  const [showRulePanel, setShowRulePanel] = useState(false);
+  const [rulesBusy, setRulesBusy] = useState(false);
+  const [rulesError, setRulesError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -91,6 +108,20 @@ export default function Home() {
     void refresh();
     const timer = window.setInterval(() => { void refresh(); }, 3500);
     return () => { active = false; window.clearInterval(timer); };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadRules = async () => {
+      try {
+        const response = await fetch("/api/rules", { cache: "no-store" });
+        if (response.ok && active) setRules(await response.json() as ReplyRule[]);
+      } catch {
+        if (active) setRulesError("تعذر تحميل قواعد الرد. تأكد من استمرار تطبيق Next.js في العمل.");
+      }
+    };
+    void loadRules();
+    return () => { active = false; };
   }, []);
 
   const startLink = async (method: "qr" | "pairing", phone?: string) => {
@@ -114,6 +145,29 @@ export default function Home() {
     void startLink("qr");
   };
 
+  const persistRules = async (nextRules: ReplyRule[]) => {
+    setRulesBusy(true);
+    setRulesError(null);
+    try {
+      const response = await fetch("/api/rules", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rules: nextRules }) });
+      const payload = await response.json() as ReplyRule[] | { error?: string };
+      if (!response.ok || !Array.isArray(payload)) throw new Error("error" in payload ? payload.error : "تعذر حفظ القواعد.");
+      setRules(payload);
+    } catch (error) {
+      setRulesError(error instanceof Error ? error.message : "تعذر حفظ القواعد.");
+    } finally {
+      setRulesBusy(false);
+    }
+  };
+
+  const selectNav = (label: string) => {
+    setActiveNav(label);
+    if (label === "قواعد الأحداث") setShowRulePanel(true);
+  };
+
+  const primaryRule = rules[0];
+  const enabledRules = rules.filter((rule) => rule.enabled).length;
+
   return (
     <div className="min-h-screen bg-[#f3f2ed] text-[#15362f]" dir="rtl">
       <aside className="fixed right-0 top-0 z-30 hidden h-screen w-[248px] flex-col border-l border-[#d9ddd3] bg-[#fbfaf6] px-4 py-5 lg:flex">
@@ -132,7 +186,7 @@ export default function Home() {
             const Icon = item.icon;
             const isActive = activeNav === item.label;
             return (
-              <button key={item.label} onClick={() => setActiveNav(item.label)} className={`group flex w-full items-center justify-between rounded-xl px-3 py-3 text-right text-sm font-semibold transition-all duration-200 ${isActive ? "bg-[#e4f1e9] text-[#0e8065] shadow-[inset_0_0_0_1px_rgba(14,128,101,0.08)]" : "text-[#67776e] hover:bg-[#f1f3ed] hover:text-[#234f43]"}`}>
+              <button key={item.label} onClick={() => selectNav(item.label)} className={`group flex w-full items-center justify-between rounded-xl px-3 py-3 text-right text-sm font-semibold transition-all duration-200 ${isActive ? "bg-[#e4f1e9] text-[#0e8065] shadow-[inset_0_0_0_1px_rgba(14,128,101,0.08)]" : "text-[#67776e] hover:bg-[#f1f3ed] hover:text-[#234f43]"}`}>
                 <span className="flex items-center gap-3"><Icon size={18} strokeWidth={isActive ? 2.3 : 1.8} />{item.label}</span>
                 {isActive && <span className="h-1.5 w-1.5 rounded-full bg-[#0e8065]" />}
               </button>
@@ -161,7 +215,7 @@ export default function Home() {
           </div>
         </header>
 
-        {mobileNav && <div className="fixed inset-x-4 top-[86px] z-40 rounded-2xl border border-[#d9ddd3] bg-[#fbfaf6] p-2 shadow-2xl lg:hidden">{navItems.map((item) => { const Icon = item.icon; return <button key={item.label} onClick={() => { setActiveNav(item.label); setMobileNav(false); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#49665b] hover:bg-[#eff7f2]"><Icon size={17} />{item.label}</button>; })}</div>}
+        {mobileNav && <div className="fixed inset-x-4 top-[86px] z-40 rounded-2xl border border-[#d9ddd3] bg-[#fbfaf6] p-2 shadow-2xl lg:hidden">{navItems.map((item) => { const Icon = item.icon; return <button key={item.label} onClick={() => { selectNav(item.label); setMobileNav(false); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#49665b] hover:bg-[#eff7f2]"><Icon size={17} />{item.label}</button>; })}</div>}
 
         <div className="mx-auto max-w-[1440px] px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
           <section className="relative overflow-hidden rounded-[28px] border border-[#d6dfd8] bg-[#edf5ef] p-6 shadow-[0_20px_55px_rgba(46,83,67,0.08)] sm:p-8 lg:min-h-[298px] lg:p-10">
@@ -194,17 +248,18 @@ export default function Home() {
 
             <div className="relative overflow-hidden rounded-[24px] border border-[#dde0d9] bg-[#f8f8f3] p-5 shadow-[0_12px_34px_rgba(51,71,60,0.045)] sm:p-6">
               <img src={assets.rules} alt="مسار قاعدة أحداث مجرد" className="pointer-events-none absolute bottom-0 left-0 h-[62%] w-[55%] object-cover opacity-20 mix-blend-multiply" />
-              <div className="relative z-10 flex items-start justify-between gap-3"><div><p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-[#6f897e]"><Bolt size={15} className="text-[#0e8065]" /> القواعد</p><h3 className="font-display text-xl font-bold tracking-[-0.04em] text-[#1d4237]">قواعدك الجاهزة</h3></div><button onClick={() => setRulesEnabled(!rulesEnabled)} className={`relative mt-1 h-7 w-12 rounded-full p-1 transition ${rulesEnabled ? "bg-[#0e8065]" : "bg-[#c7cec9]"}`} aria-label="تبديل القواعد"><span className={`block h-5 w-5 rounded-full bg-white shadow-sm transition ${rulesEnabled ? "translate-x-0" : "-translate-x-5"}`} /></button></div>
-              <div className="relative z-10 mt-7 space-y-3"><div className="rounded-2xl border border-[#d8e8df] bg-[#fdfdf9]/95 p-4"><div className="flex items-center justify-between"><span className="rounded-lg bg-[#e2f1e9] p-2 text-[#0e8065]"><MessageCircle size={17} /></span><span className="text-[10px] font-bold text-[#0e8065]">مفعّلة</span></div><p className="mt-3 text-sm font-bold text-[#315347]">الرد على الرسالة الجديدة</p><p className="mt-1 text-xs leading-5 text-[#74877e]">أرسل ردًا محددًا عند ورود كلمة «مرحبا».</p></div><button className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-[#b8d3c5] bg-white/65 p-3.5 text-right text-sm font-bold text-[#39705e] transition hover:bg-[#eff7f2]"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#e2f1e9]"><Plus size={17} /></span>أنشئ قاعدة جديدة</button></div>
+              <div className="relative z-10 flex items-start justify-between gap-3"><div><p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-[#6f897e]"><Bolt size={15} className="text-[#0e8065]" /> القواعد</p><h3 className="font-display text-xl font-bold tracking-[-0.04em] text-[#1d4237]">ردودك المخصصة</h3></div><button onClick={() => setShowRulePanel(true)} className="grid h-9 w-9 place-items-center rounded-xl bg-[#e2f1e9] text-[#0e8065] transition hover:bg-[#d3ebdf]" aria-label="ضبط قواعد الرد"><SlidersHorizontal size={17} /></button></div>
+              <div className="relative z-10 mt-7 space-y-3">{primaryRule ? <button onClick={() => setShowRulePanel(true)} className="w-full rounded-2xl border border-[#d8e8df] bg-[#fdfdf9]/95 p-4 text-right transition hover:-translate-y-0.5 hover:shadow-sm"><div className="flex items-center justify-between"><span className="rounded-lg bg-[#e2f1e9] p-2 text-[#0e8065]"><MessageCircle size={17} /></span><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${primaryRule.enabled ? "bg-[#e2f1e9] text-[#0e8065]" : "bg-[#f3ede0] text-[#a37b2e]"}`}>{primaryRule.enabled ? "مفعّلة" : "متوقفة"}</span></div><p className="mt-3 text-sm font-bold text-[#315347]">{primaryRule.name}</p><p className="mt-1 text-xs leading-5 text-[#74877e]">{primaryRule.targetPhone ? `رد خاص للرقم ${primaryRule.targetPhone}` : `عند ورود: «${primaryRule.contains || "أي عبارة"}»`}</p></button> : <div className="rounded-2xl border border-dashed border-[#c5d8cc] p-4 text-center text-xs text-[#71857b]">يتم تحميل قواعدك...</div>}<button onClick={() => setShowRulePanel(true)} className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-[#b8d3c5] bg-white/65 p-3.5 text-right text-sm font-bold text-[#39705e] transition hover:bg-[#eff7f2]"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#e2f1e9]"><Plus size={17} /></span>أنشئ ردًا جديدًا</button></div>
             </div>
           </section>
 
-          <section className="mt-5 grid gap-5 md:grid-cols-3"><MetricCard icon={Zap} label="قواعد مفعّلة" value={rulesEnabled ? "01" : "00"} hint={rulesEnabled ? "تعمل عند وصول الحدث" : "تم إيقاف القواعد"} shade="emerald" /><MetricCard icon={Clock3} label="وقت الاستجابة" value="—" hint="يظهر بعد أول حدث" shade="sky" /><MetricCard icon={CircleCheck} label="جلسات متصلة" value={session.status === "connected" ? "01" : "00"} hint={session.status === "connected" ? "الجلسة تستقبل الأحداث" : "اربط أول حساب للبدء"} shade="sand" /></section>
+          <section className="mt-5 grid gap-5 md:grid-cols-3"><MetricCard icon={Zap} label="قواعد مفعّلة" value={String(enabledRules).padStart(2, "0")} hint={enabledRules ? "تعمل عند وصول الحدث" : "افتح القواعد لتفعيل رد"} shade="emerald" /><MetricCard icon={Clock3} label="وقت الاستجابة" value="—" hint="يظهر بعد أول حدث" shade="sky" /><MetricCard icon={CircleCheck} label="جلسات متصلة" value={session.status === "connected" ? "01" : "00"} hint={session.status === "connected" ? "الجلسة تستقبل الأحداث" : "اربط أول حساب للبدء"} shade="sand" /></section>
           <section className="mt-8 flex flex-col items-start justify-between gap-4 rounded-2xl border border-[#d9ded6] bg-[#e9ebe4] px-5 py-4 sm:flex-row sm:items-center"><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#d8e9df] text-[#0e8065]"><Sparkles size={17} /></span><p className="text-sm text-[#526c61]"><strong className="text-[#284a3e]">ملاحظة تشغيلية:</strong> تظل القواعد في الانتظار إلى أن تُنشأ جلسة ربط صالحة.</p></div><button className="flex items-center gap-1 text-xs font-bold text-[#39705e] hover:text-[#0e8065]">دليل الربط الآمن <ArrowLeft size={14} /></button></section>
         </div>
       </main>
 
       {showLinkPanel && <LinkPanel linkMethod={linkMethod} setLinkMethod={setLinkMethod} session={session} isBusy={connectionBusy} error={connectionError} onStartQr={() => void startLink("qr")} onStartPairing={(phone) => void startLink("pairing", phone)} onClose={() => setShowLinkPanel(false)} />}
+      {showRulePanel && <RulesPanel rules={rules} isBusy={rulesBusy} error={rulesError} onSave={(nextRules) => void persistRules(nextRules)} onClose={() => setShowRulePanel(false)} />}
     </div>
   );
 }

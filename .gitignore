@@ -35,6 +35,7 @@ yarn-error.log*
 
 # Local WhatsApp multi-device credentials — never commit these files.
 /.wasla-session/
+/.wasla-data/
 
 # vercel
 .vercel
