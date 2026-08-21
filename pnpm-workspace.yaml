@@ -1,5 +1,6 @@
 allowBuilds:
   '@whiskeysockets/baileys': true
+  esbuild: true
   protobufjs: true
   sharp: false
   unrs-resolver: false

@@ -1,19 +1,17 @@
 /**
- * WhatsApp session bridge: an explicit, local-first Baileys connection with QR / pairing-code support.
- * This module must run only in a persistent Node.js process with a writable session directory.
+ * WhatsApp session bridge: runs only in the dedicated worker process and keeps
+ * encrypted Baileys credentials in Neon so a restart does not lose the QR session.
  */
-import path from "node:path";
-import { rm } from "node:fs/promises";
 import makeWASocket, {
   DisconnectReason,
   fetchLatestBaileysVersion,
   type WASocket,
-  useMultiFileAuthState as loadMultiFileAuthState,
 } from "@whiskeysockets/baileys";
 import pino from "pino";
 import QRCode from "qrcode";
 import { appendActivity, type ActivityEvent } from "@/lib/activity";
 import { applyAutomationRules } from "@/lib/automation";
+import { clearNeonAuthState, useNeonAuthState } from "@/lib/baileys-auth-neon";
 
 export type SessionStatus = "idle" | "connecting" | "awaiting_qr" | "awaiting_pairing" | "connected" | "error";
 export type WhatsAppEvent = { id: string; type: string; label: string; detail: string; createdAt: string };
@@ -30,7 +28,6 @@ export type PublicSession = {
 
 type BridgeState = PublicSession & { socket: WASocket | null; connecting: Promise<void> | null };
 
-const authDirectory = path.join(process.cwd(), ".wasla-session");
 const initialState = (): BridgeState => ({
   status: "idle",
   qrDataUrl: null,
@@ -77,7 +74,7 @@ function publicSession(): PublicSession {
 }
 
 async function openSocket(phone?: string) {
-  const { state: auth, saveCreds } = await loadMultiFileAuthState(authDirectory);
+  const { state: auth, saveCreds } = await useNeonAuthState();
   const { version } = await fetchLatestBaileysVersion();
   const socket = makeWASocket({
     auth,
@@ -131,6 +128,11 @@ async function openSocket(phone?: string) {
       const loggedOut = code === DisconnectReason.loggedOut;
       update({ socket: null, status: loggedOut ? "idle" : "error", qrDataUrl: null, pairingCode: null, error: loggedOut ? null : "انقطع الاتصال. أنشئ رمز ربط جديدًا للمحاولة مرة أخرى." });
       logEvent("session.closed", loggedOut ? "تم تسجيل الخروج" : "انقطع الاتصال", loggedOut ? "حُذفت الجلسة من واتساب." : "يمكنك إعادة إنشاء رمز الربط.");
+      if (!loggedOut) {
+        setTimeout(() => {
+          if (!state.socket && !state.connecting) void restoreSession().catch(() => { /* A new user action can retry. */ });
+        }, 2_500).unref();
+      }
     }
   });
 
@@ -157,9 +159,16 @@ export function getSession() {
   return publicSession();
 }
 
+export async function restoreSession() {
+  if (state.status === "connected" || state.connecting) return publicSession();
+  state.connecting = openSocket().finally(() => { state.connecting = null; });
+  await state.connecting;
+  return publicSession();
+}
+
 export async function closeSession() {
   try { await state.socket?.logout(); } catch { /* Remote session may already be closed. */ }
-  try { await rm(authDirectory, { recursive: true, force: true }); } catch { /* No local session exists. */ }
+  await clearNeonAuthState();
   const retainedEvents = state.events;
   Object.assign(state, initialState(), { events: [{ id: crypto.randomUUID(), type: "session.reset", label: "تمت إعادة ضبط الجلسة", detail: "حُذفت بيانات الربط المحلية.", createdAt: new Date().toISOString() }, ...retainedEvents].slice(0, 50) });
   return publicSession();

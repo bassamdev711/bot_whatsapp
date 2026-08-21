@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "build:worker": "esbuild worker/index.ts --bundle --platform=node --format=esm --packages=external --alias:@=./src --outdir=dist/worker --out-extension:.js=.mjs --sourcemap",
+    "worker": "pnpm run build:worker && node dist/worker/index.mjs",
     "lint": "eslint",
     "test": "vitest run"
   },
@@ -26,6 +28,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
     "tailwindcss": "^4",
