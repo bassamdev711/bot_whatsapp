@@ -53,12 +53,12 @@ NODE_ENV=production pnpm start
 | المتغير | يوضع أين | الغرض |
 |---|---|---|
 | `POSTGRES_PRISMA_URL` أو `DATABASE_URL_UNPOOLED` | العامل وVercel | الاتصال بنفس قاعدة Neon. |
-| `WHATSAPP_SESSION_ENCRYPTION_KEY` | العامل فقط | مفتاح Base64 عشوائي بطول 32 بايت لتشفير جلسة Baileys. |
+| `WHATSAPP_SESSION_ENCRYPTION_KEY` | العامل فقط | قيمة عشوائية خاصة بطول 32 حرفًا على الأقل لتشفير جلسة Baileys. |
 | `WORKER_SHARED_SECRET` | العامل وVercel | سر عشوائي طويل لحماية أوامر بدء QR والحالة وإعادة الضبط. |
 | `WORKER_URL` | Vercel فقط | رابط العامل العام، مثل `https://wasla-worker.example.com`. |
 | `PORT` | العامل | يضبطه مزود الاستضافة تلقائيًا غالبًا؛ لا تضفه إلى Vercel. |
 
-أنشئ مفاتيح السر مرة واحدة على جهاز موثوق، ولا ترسلها في محادثة أو تضعها في Git:
+أنشئ مفاتيح السر مرة واحدة على جهاز موثوق، ولا ترسلها في محادثة أو تضعها في Git. يمكن أيضًا استخدام زر التوليد بجوار حقل القيمة في Render، مع إبقاء مفتاح التشفير بطول 32 حرفًا على الأقل:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"

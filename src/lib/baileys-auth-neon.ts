@@ -2,7 +2,7 @@
  * Wasla worker design: Baileys credentials are encrypted before they are written
  * to Neon, so the worker can restart without a local session directory.
  */
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { BufferJSON, initAuthCreds, proto, type AuthenticationState, type SignalDataTypeMap } from "@whiskeysockets/baileys";
 import { readDocument, writeDocument } from "@/lib/neon-store";
 
@@ -41,12 +41,10 @@ function encryptionKey() {
     }
     return null;
   }
-
-  const key = Buffer.from(configured, "base64");
-  if (key.length !== 32) {
-    throw new Error("WHATSAPP_SESSION_ENCRYPTION_KEY يجب أن يكون مفتاح Base64 بطول 32 بايت.");
+  if (configured.length < 32) {
+    throw new Error("WHATSAPP_SESSION_ENCRYPTION_KEY يجب أن يكون قيمة عشوائية بطول 32 حرفًا على الأقل.");
   }
-  return key;
+  return createHash("sha256").update(configured, "utf8").digest();
 }
 
 function protect(payload: StoredAuth): EncryptedPayload | DevelopmentPayload {
