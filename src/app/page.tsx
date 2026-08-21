@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { FlowPanel, type InteractiveFlow } from "@/components/FlowPanel";
 import { RulesPanel } from "@/components/RulesPanel";
 import { StatusPanel, type StatusSettings } from "@/components/StatusPanel";
 import {
@@ -47,6 +48,7 @@ const navItems = [
   { label: "نظرة عامة", icon: LayoutDashboard },
   { label: "الربط", icon: Link2 },
   { label: "قواعد الأحداث", icon: Zap },
+  { label: "التدفقات التفاعلية", icon: MessageCircle },
   { label: "إدارة الحالات", icon: Eye },
   { label: "سجل النشاط", icon: ScrollText },
   { label: "الإعدادات", icon: Settings2 },
@@ -103,6 +105,10 @@ export default function Home() {
   const [showStatusPanel, setShowStatusPanel] = useState(false);
   const [statusBusy, setStatusBusy] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [flows, setFlows] = useState<InteractiveFlow[]>([]);
+  const [showFlowPanel, setShowFlowPanel] = useState(false);
+  const [flowsBusy, setFlowsBusy] = useState(false);
+  const [flowsError, setFlowsError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -145,6 +151,20 @@ export default function Home() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const loadFlows = async () => {
+      try {
+        const response = await fetch("/api/flows", { cache: "no-store" });
+        if (response.ok && active) setFlows(await response.json() as InteractiveFlow[]);
+      } catch {
+        if (active) setFlowsError("تعذر تحميل التدفقات التفاعلية.");
+      }
+    };
+    void loadFlows();
+    return () => { active = false; };
+  }, []);
+
   const startLink = async (method: "qr" | "pairing", phone?: string) => {
     setConnectionBusy(true);
     setConnectionError(null);
@@ -184,7 +204,23 @@ export default function Home() {
   const selectNav = (label: string) => {
     setActiveNav(label);
     if (label === "قواعد الأحداث") setShowRulePanel(true);
+    if (label === "التدفقات التفاعلية") setShowFlowPanel(true);
     if (label === "إدارة الحالات") setShowStatusPanel(true);
+  };
+
+  const persistFlows = async (nextFlows: InteractiveFlow[]) => {
+    setFlowsBusy(true);
+    setFlowsError(null);
+    try {
+      const response = await fetch("/api/flows", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ flows: nextFlows }) });
+      const payload = await response.json() as InteractiveFlow[] | { error?: string };
+      if (!response.ok || !Array.isArray(payload)) throw new Error("error" in payload ? payload.error : "تعذر حفظ التدفقات.");
+      setFlows(payload);
+    } catch (error) {
+      setFlowsError(error instanceof Error ? error.message : "تعذر حفظ التدفقات.");
+    } finally {
+      setFlowsBusy(false);
+    }
   };
 
   const persistStatusSettings = async (nextSettings: StatusSettings) => {
@@ -262,7 +298,7 @@ export default function Home() {
               <div className="mb-5 flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f9f8f3] text-[11px] font-bold text-[#0e8065] shadow-sm">1</span><span className="text-xs font-bold tracking-[0.08em] text-[#5d796d]">ابدأ من الاتصال</span></div>
               <h2 className="font-display text-3xl font-bold leading-[1.2] tracking-[-0.055em] text-[#153e33] sm:text-[38px]">اربط واتساب، ثم اترك <span className="text-[#0e8065]">الأحداث</span> تصل في وقتها.</h2>
               <p className="mt-4 max-w-md text-sm leading-7 text-[#547066]">أنشئ جلسة جديدة عبر الرمز أو كود الربط، ثم فعّل القواعد التي تريدها للرسائل والحالات والوسائط.</p>
-              <div className="mt-7 flex flex-wrap items-center gap-3"><button onClick={openQrLink} className="flex h-11 items-center gap-2 rounded-xl bg-[#0e8065] px-5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(14,128,101,0.2)] transition hover:bg-[#096a54] active:scale-[0.97]"><QrCode size={18} />ربط حساب واتساب</button><button onClick={() => setShowStatusPanel(true)} className="flex h-11 items-center gap-1.5 rounded-xl border border-[#b9d9cc] bg-white/60 px-3 text-sm font-bold text-[#245846] transition hover:bg-white">إدارة الحالات <Eye size={16} /></button></div>
+              <div className="mt-7 flex flex-wrap items-center gap-3"><button onClick={openQrLink} className="flex h-11 items-center gap-2 rounded-xl bg-[#0e8065] px-5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(14,128,101,0.2)] transition hover:bg-[#096a54] active:scale-[0.97]"><QrCode size={18} />ربط حساب واتساب</button><button onClick={() => setShowFlowPanel(true)} className="flex h-11 items-center gap-1.5 rounded-xl border border-[#b9d9cc] bg-white/60 px-3 text-sm font-bold text-[#245846] transition hover:bg-white">أنشئ قائمة خدمات <MessageCircle size={16} /></button><button onClick={() => setShowStatusPanel(true)} className="flex h-11 items-center gap-1.5 rounded-xl px-2 text-sm font-bold text-[#245846] transition hover:bg-white/60">الحالات <Eye size={16} /></button></div>
             </div>
             <div className="relative z-10 mt-7 flex max-w-md items-center gap-3 rounded-2xl border border-white/70 bg-[#fafbf7]/75 p-3.5 backdrop-blur-sm lg:absolute lg:bottom-8 lg:left-9 lg:mt-0"><span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#d9efe3] text-[#0e8065]"><Link2 size={20} /><span className="absolute inset-[-4px] rounded-full border border-[#0e8065]/25" /></span><div><p className="text-sm font-bold text-[#26493e]">{session.status === "connected" ? "جلسة واتساب متصلة" : session.status === "awaiting_qr" ? "الرمز جاهز للمسح" : "لا توجد جلسة متصلة"}</p><p className="mt-0.5 text-xs text-[#6b857a]">{session.status === "connected" ? "تصل الأحداث الآن إلى سجل نشاطك." : "ابدأ بالمسح من تطبيق واتساب على هاتفك."}</p></div><span className={`mr-auto h-2.5 w-2.5 rounded-full ${session.status === "connected" ? "bg-[#0e8065]" : "bg-[#d5ad4f]"}`} aria-label="حالة الربط" /></div>
           </section>
@@ -298,6 +334,7 @@ export default function Home() {
       {showLinkPanel && <LinkPanel linkMethod={linkMethod} setLinkMethod={setLinkMethod} session={session} isBusy={connectionBusy} error={connectionError} onStartQr={() => void startLink("qr")} onStartPairing={(phone) => void startLink("pairing", phone)} onClose={() => setShowLinkPanel(false)} />}
       {showRulePanel && <RulesPanel rules={rules} isBusy={rulesBusy} error={rulesError} onSave={(nextRules) => void persistRules(nextRules)} onClose={() => setShowRulePanel(false)} />}
       {showStatusPanel && <StatusPanel settings={statusSettings} isBusy={statusBusy} error={statusError} onSave={(nextSettings) => void persistStatusSettings(nextSettings)} onClose={() => setShowStatusPanel(false)} />}
+      {showFlowPanel && <FlowPanel flows={flows} isBusy={flowsBusy} error={flowsError} onSave={(nextFlows) => void persistFlows(nextFlows)} onClose={() => setShowFlowPanel(false)} />}
     </div>
   );
 }

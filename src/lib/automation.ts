@@ -3,6 +3,7 @@
  * the local repository each time an inbound message arrives.
  */
 import type { WASocket, WAMessage } from "@whiskeysockets/baileys";
+import { applyInteractiveFlows } from "@/lib/flows";
 import { getRules } from "@/lib/rules";
 import { getStatusSettings, matchesStatusSettings, reactionForPhone } from "@/lib/status-settings";
 
@@ -26,6 +27,7 @@ export async function applyAutomationRules({ socket, message, text, onAction }: 
 
   const senderPhone = jid.split("@")[0].replace(/\D/g, "");
   const normalizedText = text.toLocaleLowerCase("ar");
+  if (await applyInteractiveFlows({ socket, message, text, onAction })) return;
   const rules = await getRules();
   for (const rule of rules) {
     const expectedPhone = rule.targetPhone.replace(/\D/g, "");
