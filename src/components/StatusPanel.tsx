@@ -1,6 +1,6 @@
 "use client";
 
-/** Design: Quiet Connection Lab — deliberate and visible controls for status reactions and exceptions. */
+/** Design: Golden Protocol — deliberate status controls on an obsidian surface with gold signals. */
 import { useState } from "react";
 import { Check, Eye, EyeOff, Heart, Plus, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
 

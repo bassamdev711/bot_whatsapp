@@ -1,27 +1,64 @@
-/** Design: Quiet Connection Lab — warm ivory canvas, emerald operational states, and Arabic editorial typography. */
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+/* Design: Golden Protocol — black obsidian, ivory information, and Wasla gold as an operational signal. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@600;700;800&display=swap');
 @import "tailwindcss";
 
-:root { --background: #f3f2ed; --foreground: #15362f; }
+:root { --background: #070707; --foreground: #f6efe2; --gold: #caa45a; --gold-soft: #e9ce8c; --panel: #12110f; }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: "IBM Plex Sans Arabic", sans-serif;
   --font-mono: "DM Mono", monospace;
-  --font-display: "IBM Plex Sans Arabic", sans-serif;
+  --font-display: "Noto Kufi Arabic", "IBM Plex Sans Arabic", sans-serif;
 }
 
 * { box-sizing: border-box; }
-html { background: #f3f2ed; }
+html { background: #070707; }
 body { margin: 0; background: var(--background); color: var(--foreground); font-family: "IBM Plex Sans Arabic", Arial, sans-serif; }
-button, input { font: inherit; }
+button, input, textarea, select { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
+::selection { background: #caa45a; color: #080807; }
+
+/* The existing functional dashboard keeps its compact utility layout while this luxury layer replaces its palette. */
+:is(.wasla-luxury, .wasla-luxury-modal) {
+  color: #f6efe2;
+  background-color: #070707;
+  background-image: radial-gradient(circle at 80% 4%, rgba(202,164,90,.10), transparent 25rem), linear-gradient(135deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: auto, 22px 22px;
+}
+.wasla-luxury::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .32; background: linear-gradient(120deg, transparent 0 43%, rgba(202,164,90,.08) 43.1%, transparent 43.3% 100%); }
+.wasla-luxury > * { position: relative; z-index: 1; }
+
+/* Deep surfaces */
+:is(.wasla-luxury, .wasla-luxury-modal) :is([class*="bg-[#f3f2ed]"], [class*="bg-[#fbfaf6]"], [class*="bg-[#f8f8f3]"], [class*="bg-[#f2f4ee]"], [class*="bg-[#edf5ef]"], [class*="bg-[#fdfdf9]"], [class*="bg-[#f4faf6]"], [class*="bg-[#fffafa]"], [class*="bg-[#e9ebe4]"]) { background-color: #12110f !important; }
+:is(.wasla-luxury, .wasla-luxury-modal) :is([class*="bg-white"], [class*="bg-[#eef0eb]"], [class*="bg-[#eff1eb]"], [class*="bg-[#f1f3ef]"], [class*="bg-[#e8e9e4]"]) { background-color: #181713 !important; }
+:is(.wasla-luxury, .wasla-luxury-modal) :is([class*="bg-[#e2f1e9]"], [class*="bg-[#dceee4]"], [class*="bg-[#d8e9df]"], [class*="bg-[#e4f1e9]"], [class*="bg-[#eff7f2]"], [class*="bg-[#edf7f0]"], [class*="bg-[#d9efe3]"], [class*="bg-[#e3f0e9]"], [class*="bg-[#dcece4]"], [class*="bg-[#f2f7f3]"]) { background-color: rgba(202,164,90,.13) !important; }
+:is(.wasla-luxury, .wasla-luxury-modal) :is([class*="bg-[#e5f2f5]"], [class*="bg-[#e4f1f4]"], [class*="bg-[#f6efdc]"], [class*="bg-[#f5eeda]"], [class*="bg-[#f3ede0]"]) { background-color: rgba(255,255,255,.055) !important; }
+:is(.wasla-luxury, .wasla-luxury-modal) :is([class*="bg-[#0e8065]"], [class*="bg-[#096a54]"], [class*="bg-[#0f3f34]"]) { background-color: #caa45a !important; }
+
+/* Typography and semantic gold */
+:is(.wasla-luxury, .wasla-luxury-modal) :is([class*="text-[#15362f]"], [class*="text-[#1c4337]"], [class*="text-[#1d4237]"], [class*="text-[#193f35]"], [class*="text-[#234a3d]"], [class*="text-[#26493e]"], [class*="text-[#264a3e]"], [class*="text-[#294d41]"], [class*="text-[#284a3e]"], [class*="text-[#284d40]"], [class*="text-[#315347]"], [class*="text-[#36584c]"], [class*="text-[#134a3d]"], [class*="text-[#31584c]"], [class*="text-[#456459]"], [class*="text-[#49665b]"]) { color: #f6efe2 !important; }
+:is(.wasla-luxury, .wasla-luxury-modal) :is([class*="text-[#0e8065]"], [class*="text-[#39705e]"], [class*="text-[#277059]"], [class*="text-[#245846]"]) { color: #e1c17a !important; }
+:is(.wasla-luxury, .wasla-luxury-modal) :is([class*="text-[#547066]"], [class*="text-[#6f897e]"], [class*="text-[#67776e]"], [class*="text-[#71857b]"], [class*="text-[#73877e]"], [class*="text-[#74877e]"], [class*="text-[#778b80]"], [class*="text-[#82948b]"], [class*="text-[#8a9a92]"], [class*="text-[#98a69e]"], [class*="text-[#a5b0aa]"]) { color: #aaa398 !important; }
+:is(.wasla-luxury, .wasla-luxury-modal) :is([class*="text-white"], [class*="text-[#f4f3ee]"]) { color: #11100d !important; }
+
+/* Metal borders, inputs, and high-value controls */
+:is(.wasla-luxury, .wasla-luxury-modal) :is([class*="border-[#"], [class*="border-white"]) { border-color: rgba(202,164,90,.23) !important; }
+:is(.wasla-luxury, .wasla-luxury-modal) input, :is(.wasla-luxury, .wasla-luxury-modal) textarea, :is(.wasla-luxury, .wasla-luxury-modal) select { color: #f6efe2 !important; background-color: #0c0c0b !important; border-color: rgba(202,164,90,.28) !important; }
+:is(.wasla-luxury, .wasla-luxury-modal) input:focus, :is(.wasla-luxury, .wasla-luxury-modal) textarea:focus, :is(.wasla-luxury, .wasla-luxury-modal) select:focus { border-color: #caa45a !important; box-shadow: 0 0 0 4px rgba(202,164,90,.12) !important; }
+:is(.wasla-luxury, .wasla-luxury-modal) button[class*="bg-[#0e8065]"] { box-shadow: 0 10px 28px rgba(202,164,90,.19) !important; }
+
+.luxury-sidebar { background: linear-gradient(180deg, #12110f 0%, #090909 100%) !important; border-color: rgba(202,164,90,.24) !important; }
+.luxury-topbar { background: rgba(9,9,8,.82) !important; border-color: rgba(202,164,90,.18) !important; }
+.luxury-hero { border-color: rgba(202,164,90,.34) !important; background-color: #0f0e0b !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 30px 80px rgba(0,0,0,.42) !important; }
+.luxury-hero > img { opacity: .62 !important; mix-blend-mode: screen !important; }
+.luxury-card { background: linear-gradient(145deg, rgba(28,26,20,.92), rgba(12,12,11,.97)) !important; border-color: rgba(202,164,90,.2) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 18px 44px rgba(0,0,0,.26) !important; }
+.luxury-card:hover { border-color: rgba(202,164,90,.48) !important; }
+.luxury-gold-line { background: linear-gradient(90deg, transparent, #caa45a, transparent) !important; }
 
 @media (prefers-reduced-motion: no-preference) {
   main > div > section { animation: wasla-rise 440ms cubic-bezier(0.23, 1, 0.32, 1) both; }
   main > div > section:nth-of-type(2) { animation-delay: 45ms; }
   main > div > section:nth-of-type(3) { animation-delay: 90ms; }
 }
-
 @keyframes wasla-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

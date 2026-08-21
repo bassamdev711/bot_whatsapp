@@ -1,6 +1,6 @@
 "use client";
 
-/** Design: Quiet Connection Lab — an RTL builder for compact, intentional WhatsApp service menus. */
+/** Design: Golden Protocol — an obsidian RTL builder for elegant, explicit WhatsApp service menus. */
 import { useState } from "react";
 import { Check, ListTree, Plus, Trash2, X, Zap } from "lucide-react";
 

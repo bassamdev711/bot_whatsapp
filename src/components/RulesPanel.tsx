@@ -1,6 +1,6 @@
 "use client";
 
-/** Design: Quiet Connection Lab — a focused RTL rule editor for explicit, readable automation. */
+/** Design: Golden Protocol — an obsidian RTL rule editor with gold reserved for active control. */
 import { useState } from "react";
 import { Check, MessageCircle, Phone, Plus, Trash2, X, Zap } from "lucide-react";
 

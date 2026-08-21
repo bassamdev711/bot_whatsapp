@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Design: "Quiet Connection Lab" — a warm editorial Arabic dashboard that makes
- * the operational path visible: connect a session, choose event rules, observe activity.
+ * Design: "Golden Protocol" — an obsidian Arabic command surface with ivory information
+ * and Wasla gold reserved for control, live signal, and irreversible intent.
  */
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -39,9 +39,10 @@ import {
 } from "lucide-react";
 
 const assets = {
-  logo: "/manus-storage/wasla-logo_60ec8cb8.png",
-  connection: "/manus-storage/wasla-connection-art_a9953ba8.jpg",
-  rules: "/manus-storage/wasla-rules-art_7629197e.jpg",
+  logo: "/manus-storage/wasla-obsidian-mark_69fc72c5.png",
+  connection: "/manus-storage/wasla-obsidian-hero_bc571d12.jpg",
+  rules: "/manus-storage/wasla-gold-rules-art_df5038bc.jpg",
+  events: "/manus-storage/wasla-gold-event-art_b5b2797d.jpg",
 };
 
 const navItems = [
@@ -242,8 +243,8 @@ export default function Home() {
   const enabledRules = rules.filter((rule) => rule.enabled).length;
 
   return (
-    <div className="min-h-screen bg-[#f3f2ed] text-[#15362f]" dir="rtl">
-      <aside className="fixed right-0 top-0 z-30 hidden h-screen w-[248px] flex-col border-l border-[#d9ddd3] bg-[#fbfaf6] px-4 py-5 lg:flex">
+    <div className="wasla-luxury min-h-screen bg-[#f3f2ed] text-[#15362f]" dir="rtl">
+      <aside className="luxury-sidebar fixed right-0 top-0 z-30 hidden h-screen w-[248px] flex-col border-l border-[#d9ddd3] bg-[#fbfaf6] px-4 py-5 lg:flex">
         <div className="mb-9 flex items-center gap-3 px-2">
           <div className="grid h-11 w-11 place-items-center rounded-[15px] bg-[#e3f0e9] p-2.5 shadow-[0_9px_24px_rgba(14,128,101,0.14)]">
             <img src={assets.logo} alt="رمز وصلة" className="h-full w-full object-contain" />
@@ -276,7 +277,7 @@ export default function Home() {
       </aside>
 
       <main className="lg:mr-[248px]">
-        <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-[#d9ddd3]/90 bg-[#f3f2ed]/85 px-5 backdrop-blur-xl sm:px-8 lg:px-10">
+        <header className="luxury-topbar sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-[#d9ddd3]/90 bg-[#f3f2ed]/85 px-5 backdrop-blur-xl sm:px-8 lg:px-10">
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileNav(!mobileNav)} className="grid h-10 w-10 place-items-center rounded-xl border border-[#d9ddd3] bg-[#fbfaf6] text-[#31584c] lg:hidden" aria-label="فتح التنقل"><Menu size={19} /></button>
             <div><div className="flex items-center gap-2 text-xs text-[#8b988f]"><span>العمل</span><ChevronLeft size={13} /><span className="text-[#49665b]">{activeNav}</span></div><h1 className="mt-1 font-display text-xl font-bold tracking-[-0.035em] text-[#193f35]">صباح الخير، بسّام</h1></div>
@@ -291,9 +292,9 @@ export default function Home() {
         {mobileNav && <div className="fixed inset-x-4 top-[86px] z-40 rounded-2xl border border-[#d9ddd3] bg-[#fbfaf6] p-2 shadow-2xl lg:hidden">{navItems.map((item) => { const Icon = item.icon; return <button key={item.label} onClick={() => { selectNav(item.label); setMobileNav(false); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#49665b] hover:bg-[#eff7f2]"><Icon size={17} />{item.label}</button>; })}</div>}
 
         <div className="mx-auto max-w-[1440px] px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
-          <section className="relative overflow-hidden rounded-[28px] border border-[#d6dfd8] bg-[#edf5ef] p-6 shadow-[0_20px_55px_rgba(46,83,67,0.08)] sm:p-8 lg:min-h-[298px] lg:p-10">
+          <section className="luxury-hero relative overflow-hidden rounded-[28px] border border-[#d6dfd8] bg-[#edf5ef] p-6 shadow-[0_20px_55px_rgba(46,83,67,0.08)] sm:p-8 lg:min-h-[298px] lg:p-10">
             <img src={assets.connection} alt="مسارات اتصال مجردة" className="pointer-events-none absolute inset-0 h-full w-full object-cover object-left opacity-[0.46] mix-blend-multiply" />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(237,245,239,0.14)_0%,rgba(237,245,239,0.78)_48%,rgba(237,245,239,0.98)_76%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,5,5,0.12)_0%,rgba(8,8,7,0.7)_48%,rgba(8,8,7,0.96)_78%)]" />
             <div className="relative z-10 max-w-xl">
               <div className="mb-5 flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f9f8f3] text-[11px] font-bold text-[#0e8065] shadow-sm">1</span><span className="text-xs font-bold tracking-[0.08em] text-[#5d796d]">ابدأ من الاتصال</span></div>
               <h2 className="font-display text-3xl font-bold leading-[1.2] tracking-[-0.055em] text-[#153e33] sm:text-[38px]">اربط واتساب، ثم اترك <span className="text-[#0e8065]">الأحداث</span> تصل في وقتها.</h2>
@@ -304,7 +305,7 @@ export default function Home() {
           </section>
 
           <section className="relative z-10 -mt-3 mb-7 overflow-hidden rounded-2xl border border-[#d4e2d9] bg-[#fbfaf6] px-4 py-4 shadow-[0_12px_30px_rgba(42,78,62,0.06)] sm:px-6">
-            <div className="absolute right-[11%] left-[11%] top-1/2 hidden h-px -translate-y-1/2 bg-gradient-to-l from-[#0e8065]/45 via-[#79adbd]/35 to-[#d5ad4f]/45 md:block" />
+            <div className="luxury-gold-line absolute right-[11%] left-[11%] top-1/2 hidden h-px -translate-y-1/2 bg-gradient-to-l from-[#0e8065]/45 via-[#79adbd]/35 to-[#d5ad4f]/45 md:block" />
             <div className="relative grid gap-3 md:grid-cols-3 md:gap-8">
               <WorkflowStage number="01" title="الاتصال" detail="اربط الهاتف مرة واحدة" state="الخطوة الحالية" tone="emerald" logo />
               <WorkflowStage number="02" title="الأحداث" detail="تصل الرسائل والحالات" state="جاهز للمراقبة" tone="sky" />
@@ -313,13 +314,14 @@ export default function Home() {
           </section>
 
           <section className="mt-7 grid gap-5 xl:grid-cols-[1.42fr_0.85fr]">
-            <div className="rounded-[24px] border border-[#dde0d9] bg-[#fbfaf6] p-5 shadow-[0_12px_34px_rgba(51,71,60,0.045)] sm:p-6">
-              <div className="mb-6 flex items-start justify-between gap-4"><div><p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-[#6f897e]"><Activity size={15} className="text-[#0e8065]" /> تدفق الأحداث</p><h3 className="font-display text-xl font-bold tracking-[-0.04em] text-[#1d4237]">آخر ما وصل إلى نظامك</h3></div><button className="grid h-9 w-9 place-items-center rounded-xl text-[#799087] transition hover:bg-[#f0f2ec]" aria-label="خيارات السجل"><MoreHorizontal size={19} /></button></div>
-              <div className="relative space-y-1 before:absolute before:right-[22px] before:top-7 before:h-[calc(100%-56px)] before:w-px before:bg-[#d5e5dc]">{eventRows.map((event) => { const Icon = event.icon; const colors = event.tone === "emerald" ? "bg-[#e1f0e8] text-[#0e8065]" : event.tone === "sky" ? "bg-[#e5f2f5] text-[#438090]" : "bg-[#f6efdc] text-[#ad8740]"; return <div key={event.title} className="relative flex items-center gap-3 rounded-2xl p-3 transition hover:bg-[#f6f7f2]"><span className={`relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-xl ${colors}`}><Icon size={19} /></span><div className="min-w-0 flex-1"><p className="text-sm font-bold text-[#294d41]">{event.title}</p><p className="mt-1 truncate text-xs text-[#73877e]">{event.detail}</p></div><span className="font-mono text-[10px] text-[#98a69e]">{event.time}</span></div>; })}</div>
-              <button className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#cbdad0] py-3 text-xs font-bold text-[#39705e] transition hover:border-[#0e8065] hover:bg-[#eff7f2]">افتح سجل الأحداث <ArrowLeft size={15} /></button>
+            <div className="luxury-card relative overflow-hidden rounded-[24px] border border-[#dde0d9] bg-[#fbfaf6] p-5 shadow-[0_12px_34px_rgba(51,71,60,0.045)] sm:p-6">
+              <img src={assets.events} alt="مسارات أحداث تقنية ذهبية" className="pointer-events-none absolute -bottom-12 -left-12 h-52 w-52 object-cover opacity-25 mix-blend-screen" />
+              <div className="relative z-10 mb-6 flex items-start justify-between gap-4"><div><p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-[#6f897e]"><Activity size={15} className="text-[#0e8065]" /> تدفق الأحداث</p><h3 className="font-display text-xl font-bold tracking-[-0.04em] text-[#1d4237]">آخر ما وصل إلى نظامك</h3></div><button className="grid h-9 w-9 place-items-center rounded-xl text-[#799087] transition hover:bg-[#f0f2ec]" aria-label="خيارات السجل"><MoreHorizontal size={19} /></button></div>
+              <div className="relative z-10 space-y-1 before:absolute before:right-[22px] before:top-7 before:h-[calc(100%-56px)] before:w-px before:bg-[#d5e5dc]">{eventRows.map((event) => { const Icon = event.icon; const colors = event.tone === "emerald" ? "bg-[#e1f0e8] text-[#0e8065]" : event.tone === "sky" ? "bg-[#e5f2f5] text-[#438090]" : "bg-[#f6efdc] text-[#ad8740]"; return <div key={event.title} className="relative flex items-center gap-3 rounded-2xl p-3 transition hover:bg-[#f6f7f2]"><span className={`relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-xl ${colors}`}><Icon size={19} /></span><div className="min-w-0 flex-1"><p className="text-sm font-bold text-[#294d41]">{event.title}</p><p className="mt-1 truncate text-xs text-[#73877e]">{event.detail}</p></div><span className="font-mono text-[10px] text-[#98a69e]">{event.time}</span></div>; })}</div>
+              <button className="relative z-10 mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#cbdad0] py-3 text-xs font-bold text-[#39705e] transition hover:border-[#0e8065] hover:bg-[#eff7f2]">افتح سجل الأحداث <ArrowLeft size={15} /></button>
             </div>
 
-            <div className="relative overflow-hidden rounded-[24px] border border-[#dde0d9] bg-[#f8f8f3] p-5 shadow-[0_12px_34px_rgba(51,71,60,0.045)] sm:p-6">
+            <div className="luxury-card relative overflow-hidden rounded-[24px] border border-[#dde0d9] bg-[#f8f8f3] p-5 shadow-[0_12px_34px_rgba(51,71,60,0.045)] sm:p-6">
               <img src={assets.rules} alt="مسار قاعدة أحداث مجرد" className="pointer-events-none absolute bottom-0 left-0 h-[62%] w-[55%] object-cover opacity-20 mix-blend-multiply" />
               <div className="relative z-10 flex items-start justify-between gap-3"><div><p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-[#6f897e]"><Bolt size={15} className="text-[#0e8065]" /> القواعد</p><h3 className="font-display text-xl font-bold tracking-[-0.04em] text-[#1d4237]">ردودك المخصصة</h3></div><button onClick={() => setShowRulePanel(true)} className="grid h-9 w-9 place-items-center rounded-xl bg-[#e2f1e9] text-[#0e8065] transition hover:bg-[#d3ebdf]" aria-label="ضبط قواعد الرد"><SlidersHorizontal size={17} /></button></div>
               <div className="relative z-10 mt-7 space-y-3">{primaryRule ? <button onClick={() => setShowRulePanel(true)} className="w-full rounded-2xl border border-[#d8e8df] bg-[#fdfdf9]/95 p-4 text-right transition hover:-translate-y-0.5 hover:shadow-sm"><div className="flex items-center justify-between"><span className="rounded-lg bg-[#e2f1e9] p-2 text-[#0e8065]"><MessageCircle size={17} /></span><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${primaryRule.enabled ? "bg-[#e2f1e9] text-[#0e8065]" : "bg-[#f3ede0] text-[#a37b2e]"}`}>{primaryRule.enabled ? "مفعّلة" : "متوقفة"}</span></div><p className="mt-3 text-sm font-bold text-[#315347]">{primaryRule.name}</p><p className="mt-1 text-xs leading-5 text-[#74877e]">{primaryRule.targetPhone ? `رد خاص للرقم ${primaryRule.targetPhone}` : `عند ورود: «${primaryRule.contains || "أي عبارة"}»`}</p></button> : <div className="rounded-2xl border border-dashed border-[#c5d8cc] p-4 text-center text-xs text-[#71857b]">يتم تحميل قواعدك...</div>}<button onClick={() => setShowRulePanel(true)} className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-[#b8d3c5] bg-white/65 p-3.5 text-right text-sm font-bold text-[#39705e] transition hover:bg-[#eff7f2]"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#e2f1e9]"><Plus size={17} /></span>أنشئ ردًا جديدًا</button></div>
