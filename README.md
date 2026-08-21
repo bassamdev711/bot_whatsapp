@@ -42,7 +42,9 @@ NODE_ENV=production pnpm build
 NODE_ENV=production pnpm start
 ```
 
-تحتاج بيئة الإنتاج إلى قرص قابل للكتابة يبقى بين عمليات إعادة التشغيل حتى تحفظ `.wasla-session/` و`.wasla-data/`. إذا حذفت مجلد الجلسة أو اخترت إعادة ضبطها، ستحتاج إلى ربط الحساب من جديد. أما حذف مجلد القواعد فيعيد القاعدة الافتراضية المتوقفة.
+في Vercel، تحفظ القواعد والتدفقات وإعدادات الحالات وإعدادات مساعد بسّام وسجل النشاط في Neon بدل الاعتماد على قرص محلي. يستخدم التطبيق `POSTGRES_PRISMA_URL` أولًا، ثم `DATABASE_URL_UNPOOLED`، ثم `DATABASE_URL` إذا كانت سلسلة PostgreSQL صالحة. ينشئ التطبيق جدول `wasla_documents` تلقائيًا عند أول طلب. لا تحتاج إلى إضافة متغير Neon آخر ما دامت المتغيرات التي أضفتها ظاهرة في بيئة Vercel.
+
+أثناء التطوير المحلي فقط، يعود التطبيق إلى `.wasla-data/` عندما لا توجد سلسلة Neon صالحة. تبقى بيانات جلسة واتساب نفسها في `.wasla-session/` إلى أن يُفصل موصل واتساب في عامل Node.js دائم؛ قاعدة Neon لا تحفظ ملفات اعتماد QR متعددة تلقائيًا.
 
 ## قواعد الأحداث
 
@@ -100,6 +102,19 @@ NODE_ENV=production pnpm start
 
 يستخدم الخادم المتغير `GEMINIAPI` فقط. لا تضع المفتاح في متغير يبدأ بـ`NEXT_PUBLIC_`، ولا تضفه إلى ملف أو إلى Git. توصي وثائق Gemini باستخدام متغيرات البيئة وعدم كشف المفاتيح في تطبيقات العميل [1].
 
+## Neon وVercel
+
+| البيانات | مكان الحفظ في Vercel |
+|---|---|
+| قواعد الرد | Neon، ضمن مستند `rules`. |
+| قوائم الخدمات | Neon، ضمن مستند `interactive-flows`. |
+| إعدادات الحالات | Neon، ضمن مستند `status-settings`. |
+| إعدادات مساعد بسّام | Neon، ضمن مستند `assistant-settings`. |
+| سجل النشاط | Neon، ضمن مستند `activity`. |
+| جلسة QR واتساب | ليست في Neon بعد؛ تحتاج عامل Node.js دائمًا مع تخزين اعتماد مناسب. |
+
+يمكن فحص الاتصال بعد النشر من `/api/health`. عندما ينجح الاتصال ستعرض الاستجابة `"storage":"neon"`. تدعم وثائق Neon استخدام مشغلها الخادمي في Next.js، كما يحقن التكامل مع Vercel متغيرات الاتصال لكل بيئة منشورة [2] [3].
+
 ## واجهات التطبيق
 
 | المسار | الغرض |
@@ -122,3 +137,5 @@ NODE_ENV=production pnpm start
 ## References
 
 [1]: https://ai.google.dev/gemini-api/docs/api-key
+[2]: https://neon.com/docs/guides/nextjs
+[3]: https://neon.com/docs/guides/neon-managed-vercel-integration

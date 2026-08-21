@@ -1,9 +1,7 @@
 /**
- * Local rule repository. The file is deliberately outside Git and survives process restarts
- * when the hosting runtime exposes a persistent writable disk.
+ * Rule repository backed by Neon in production and a private local fallback in development.
  */
-import path from "node:path";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { readDocument, writeDocument } from "./neon-store";
 
 export type RuleEvent = "message.received";
 
@@ -19,8 +17,6 @@ export type ReplyRule = {
   updatedAt: string;
 };
 
-const dataDirectory = path.join(process.cwd(), ".wasla-data");
-const rulesPath = path.join(dataDirectory, "rules.json");
 
 function createDefaultRule(): ReplyRule {
   const now = new Date().toISOString();
@@ -53,22 +49,13 @@ function sanitizeRule(input: Partial<ReplyRule>, existing?: ReplyRule): ReplyRul
 }
 
 async function readStoredRules(): Promise<ReplyRule[] | null> {
-  try {
-    const raw = await readFile(rulesPath, "utf8");
-    const data = JSON.parse(raw) as unknown;
-    if (!Array.isArray(data)) return null;
-    return data.filter((item): item is Partial<ReplyRule> => Boolean(item && typeof item === "object")).map((item) => sanitizeRule(item));
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
-    throw error;
-  }
+  const data = await readDocument<unknown>("rules");
+  if (!Array.isArray(data)) return null;
+  return data.filter((item): item is Partial<ReplyRule> => Boolean(item && typeof item === "object")).map((item) => sanitizeRule(item));
 }
 
 async function writeRules(rules: ReplyRule[]) {
-  await mkdir(dataDirectory, { recursive: true });
-  const temporaryPath = `${rulesPath}.tmp`;
-  await writeFile(temporaryPath, `${JSON.stringify(rules, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
-  await rename(temporaryPath, rulesPath);
+  await writeDocument("rules", rules);
 }
 
 export async function getRules() {

@@ -1,9 +1,8 @@
 /**
  * Interactive WhatsApp flows: opt-in numeric menus with short-lived in-memory conversation state.
  */
-import path from "node:path";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import type { WASocket, WAMessage } from "@whiskeysockets/baileys";
+import { readDocument, writeDocument } from "./neon-store";
 
 export type FlowOption = { id: string; label: string; reply: string };
 export type InteractiveFlow = {
@@ -19,8 +18,6 @@ export type InteractiveFlow = {
   updatedAt: string;
 };
 
-const dataDirectory = path.join(process.cwd(), ".wasla-data");
-const flowsPath = path.join(dataDirectory, "interactive-flows.json");
 const pendingFlows = new Map<string, { flowId: string; expiresAt: number }>();
 const sessionLifetimeMs = 15 * 60 * 1000;
 
@@ -79,23 +76,15 @@ function sanitizeFlow(input: Partial<InteractiveFlow>, existing?: InteractiveFlo
 }
 
 async function writeFlows(flows: InteractiveFlow[]) {
-  await mkdir(dataDirectory, { recursive: true });
-  const temporaryPath = `${flowsPath}.tmp`;
-  await writeFile(temporaryPath, `${JSON.stringify(flows, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
-  await rename(temporaryPath, flowsPath);
+  await writeDocument("interactive-flows", flows);
 }
 
 export async function getFlows() {
-  try {
-    const raw = JSON.parse(await readFile(flowsPath, "utf8")) as unknown;
-    if (!Array.isArray(raw)) throw new Error("ملف التدفقات غير صالح.");
-    return raw.filter((item): item is Partial<InteractiveFlow> => Boolean(item && typeof item === "object")).map((item) => sanitizeFlow(item));
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-    const flows = [defaultFlow()];
-    await writeFlows(flows);
-    return flows;
-  }
+  const raw = await readDocument<unknown>("interactive-flows");
+  if (Array.isArray(raw)) return raw.filter((item): item is Partial<InteractiveFlow> => Boolean(item && typeof item === "object")).map((item) => sanitizeFlow(item));
+  const flows = [defaultFlow()];
+  await writeFlows(flows);
+  return flows;
 }
 
 export async function replaceFlows(input: unknown) {

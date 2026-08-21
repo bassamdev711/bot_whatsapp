@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@whiskeysockets/baileys": "7.0.0-rc14",
     "jimp": "^1.6.1",
     "lucide-react": "^1.33.0",

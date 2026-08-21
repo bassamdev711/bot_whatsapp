@@ -1,8 +1,7 @@
 /**
  * Persistent, opt-in settings for status viewing and reactions. Defaults are deliberately off.
  */
-import path from "node:path";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { readDocument, writeDocument } from "./neon-store";
 
 export type StatusMode = "all" | "selected";
 
@@ -18,8 +17,6 @@ export type StatusSettings = {
   updatedAt: string;
 };
 
-const dataDirectory = path.join(process.cwd(), ".wasla-data");
-const settingsPath = path.join(dataDirectory, "status-settings.json");
 
 const defaultSettings = (): StatusSettings => ({
   enabled: false,
@@ -70,21 +67,15 @@ function sanitize(input: Partial<StatusSettings>): StatusSettings {
 }
 
 async function save(settings: StatusSettings) {
-  await mkdir(dataDirectory, { recursive: true });
-  const temporaryPath = `${settingsPath}.tmp`;
-  await writeFile(temporaryPath, `${JSON.stringify(settings, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
-  await rename(temporaryPath, settingsPath);
+  await writeDocument("status-settings", settings);
 }
 
 export async function getStatusSettings() {
-  try {
-    return sanitize(JSON.parse(await readFile(settingsPath, "utf8")) as Partial<StatusSettings>);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-    const settings = defaultSettings();
-    await save(settings);
-    return settings;
-  }
+  const stored = await readDocument<Partial<StatusSettings>>("status-settings");
+  if (stored) return sanitize(stored);
+  const settings = defaultSettings();
+  await save(settings);
+  return settings;
 }
 
 export async function replaceStatusSettings(input: unknown) {

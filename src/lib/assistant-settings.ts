@@ -1,6 +1,5 @@
 /** Personal assistant settings: user-controlled, local-first, and deliberately disabled by default. */
-import path from "node:path";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { readDocument, writeDocument } from "./neon-store";
 
 export type AssistantStrictness = "guided" | "strict" | "locked";
 export type AssistantSettings = {
@@ -12,8 +11,6 @@ export type AssistantSettings = {
   updatedAt: string;
 };
 
-const dataDirectory = path.join(process.cwd(), ".wasla-data");
-const settingsPath = path.join(dataDirectory, "assistant-settings.json");
 
 const defaults = (): AssistantSettings => ({
   enabled: false,
@@ -36,25 +33,14 @@ function normalize(input: Partial<AssistantSettings>): AssistantSettings {
   };
 }
 
-async function write(settings: AssistantSettings) {
-  await mkdir(dataDirectory, { recursive: true });
-  const temporaryPath = `${settingsPath}.tmp`;
-  await writeFile(temporaryPath, `${JSON.stringify(settings, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
-  await rename(temporaryPath, settingsPath);
-}
-
 export async function getAssistantSettings() {
-  try {
-    const parsed = JSON.parse(await readFile(settingsPath, "utf8")) as Partial<AssistantSettings>;
-    return { ...defaults(), ...normalize(parsed), updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : new Date().toISOString() };
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return defaults();
-    throw error;
-  }
+  const parsed = await readDocument<Partial<AssistantSettings>>("assistant-settings");
+  if (!parsed) return defaults();
+  return { ...defaults(), ...normalize(parsed), updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : new Date().toISOString() };
 }
 
 export async function saveAssistantSettings(input: Partial<AssistantSettings>) {
   const settings = normalize(input);
-  await write(settings);
+  await writeDocument("assistant-settings", settings);
   return settings;
 }
