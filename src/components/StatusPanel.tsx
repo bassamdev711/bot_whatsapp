@@ -1,0 +1,57 @@
+"use client";
+
+/** Design: Quiet Connection Lab — deliberate and visible controls for status reactions and exceptions. */
+import { useState } from "react";
+import { Check, Eye, EyeOff, Heart, Plus, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
+
+export type StatusSettings = {
+  enabled: boolean;
+  markSeen: boolean;
+  sendReaction: boolean;
+  defaultReaction: string;
+  mode: "all" | "selected";
+  includePhones: string[];
+  excludePhones: string[];
+  customReactions: Record<string, string>;
+  updatedAt: string;
+};
+
+const reactions = ["❤️", "👍", "🔥", "👏", "😂", "😮"];
+const normalizePhone = (value: string) => value.replace(/\D/g, "").slice(0, 18);
+
+export function StatusPanel({ settings, isBusy, error, onSave, onClose }: { settings: StatusSettings; isBusy: boolean; error: string | null; onSave: (settings: StatusSettings) => void; onClose: () => void }) {
+  const [draft, setDraft] = useState<StatusSettings>(settings);
+  const [includeInput, setIncludeInput] = useState("");
+  const [excludeInput, setExcludeInput] = useState("");
+  const [customInput, setCustomInput] = useState("");
+  const [customReaction, setCustomReaction] = useState("❤️");
+
+  const addPhone = (kind: "include" | "exclude") => {
+    const value = normalizePhone(kind === "include" ? includeInput : excludeInput);
+    if (!value) return;
+    const key = kind === "include" ? "includePhones" : "excludePhones";
+    setDraft({ ...draft, [key]: [...new Set([...draft[key], value])] });
+    if (kind === "include") setIncludeInput(""); else setExcludeInput("");
+  };
+  const removePhone = (kind: "include" | "exclude", phone: string) => {
+    const key = kind === "include" ? "includePhones" : "excludePhones";
+    setDraft({ ...draft, [key]: draft[key].filter((item) => item !== phone) });
+  };
+  const addCustomReaction = () => {
+    const phone = normalizePhone(customInput);
+    if (!phone) return;
+    setDraft({ ...draft, customReactions: { ...draft.customReactions, [phone]: customReaction } });
+    setCustomInput("");
+  };
+
+  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#102e25]/35 p-0 backdrop-blur-[3px] sm:items-center sm:p-5" role="dialog" aria-modal="true" aria-label="إدارة حالات واتساب"><div className="w-full max-w-[1040px] overflow-hidden rounded-t-[28px] border border-white/50 bg-[#fbfaf6] shadow-[0_30px_90px_rgba(18,51,42,0.28)] sm:rounded-[28px]"><div className="flex items-center justify-between border-b border-[#e1e3dc] px-5 py-4 sm:px-7"><div><p className="text-xs font-bold tracking-[0.08em] text-[#6f897e]">إدارة الحالات</p><h2 className="mt-1 font-display text-xl font-bold tracking-[-0.04em] text-[#1c4337]">شاهد وتفاعل وفق قواعدك</h2></div><button onClick={onClose} className="grid h-9 w-9 place-items-center rounded-xl text-[#62796f] hover:bg-[#eff1eb]" aria-label="إغلاق"><X size={19} /></button></div><div className="max-h-[78vh] overflow-y-auto p-5 sm:p-7"><div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]"><section className="rounded-2xl border border-[#d7e5dc] bg-[#f2f7f3] p-5"><div className="flex items-start justify-between gap-4"><div><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#dceee4] text-[#0e8065]"><Eye size={19} /></span><h3 className="mt-4 text-base font-bold text-[#234a3d]">قاعدة الحالات</h3><p className="mt-1 text-xs leading-5 text-[#668076]">تعمل فور وصول الحالة إلى الجلسة المتصلة، وليس قبل ربط حساب واتساب.</p></div><button onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} className={`relative mt-1 h-7 w-12 rounded-full p-1 transition ${draft.enabled ? "bg-[#0e8065]" : "bg-[#c7cec9]"}`} aria-label="تفعيل إدارة الحالات"><span className={`block h-5 w-5 rounded-full bg-white shadow-sm transition ${draft.enabled ? "translate-x-0" : "-translate-x-5"}`} /></button></div><div className="mt-5 space-y-2 border-t border-[#d6e5dc] pt-4"><ToggleRow icon={draft.markSeen ? Eye : EyeOff} title="تأكيد مشاهدة الحالة" detail="يرسل إيصال قراءة للحالة المطابقة." enabled={draft.markSeen} onClick={() => setDraft({ ...draft, markSeen: !draft.markSeen })} /><ToggleRow icon={Heart} title="إرسال تفاعل تلقائي" detail="يرسل رمز التفاعل الذي تضبطه أدناه." enabled={draft.sendReaction} onClick={() => setDraft({ ...draft, sendReaction: !draft.sendReaction })} /></div><div className="mt-5 rounded-xl border border-[#d5e4dc] bg-white/75 p-3 text-xs leading-5 text-[#42705f]"><SlidersHorizontal size={15} className="mb-1" />تظل القاعدة متوقفة حتى تحفظها وتفعّلها من المفتاح أعلاه.</div></section><section className="rounded-2xl border border-[#e1e3dc] bg-white/70 p-5"><div className="flex items-center gap-2"><Heart size={17} className="text-[#c65762]" fill="currentColor" /><div><h3 className="text-base font-bold text-[#234a3d]">التفاعل والاستهداف</h3><p className="mt-0.5 text-xs text-[#74877e]">اختر القلب أو أي رمز آخر وحدد من يشملهم التفاعل.</p></div></div><p className="mt-5 text-xs font-bold text-[#627a70]">التفاعل الافتراضي</p><div className="mt-2 flex flex-wrap gap-2">{reactions.map((reaction) => <button key={reaction} onClick={() => setDraft({ ...draft, defaultReaction: reaction })} className={`grid h-10 w-10 place-items-center rounded-xl text-lg transition ${draft.defaultReaction === reaction ? "bg-[#fce7e8] ring-2 ring-[#d4747c]/35" : "bg-[#f1f3ef] hover:bg-[#e6eee9]"}`}>{reaction}</button>)}</div><p className="mt-5 text-xs font-bold text-[#627a70]">ينطبق على</p><div className="mt-2 grid grid-cols-2 rounded-xl bg-[#eef1ec] p-1"><button onClick={() => setDraft({ ...draft, mode: "all" })} className={`rounded-lg py-2 text-xs font-bold transition ${draft.mode === "all" ? "bg-white text-[#0e8065] shadow-sm" : "text-[#71857b]"}`}>كل الحالات</button><button onClick={() => setDraft({ ...draft, mode: "selected" })} className={`rounded-lg py-2 text-xs font-bold transition ${draft.mode === "selected" ? "bg-white text-[#0e8065] shadow-sm" : "text-[#71857b]"}`}>أرقام محددة فقط</button></div></section></div><div className="mt-5 grid gap-5 lg:grid-cols-2"><PhoneListCard tone="emerald" title="الأرقام المشمولة" detail={draft.mode === "selected" ? "لن يتفاعل النظام إلا مع هذه الأرقام." : "تُستخدم فقط عند اختيار وضع أرقام محددة."} input={includeInput} setInput={setIncludeInput} phones={draft.includePhones} onAdd={() => addPhone("include")} onRemove={(phone) => removePhone("include", phone)} /><PhoneListCard tone="sand" title="الأرقام المستثناة" detail="لا يشاهد النظام حالات هذه الأرقام ولا يتفاعل معها." input={excludeInput} setInput={setExcludeInput} phones={draft.excludePhones} onAdd={() => addPhone("exclude")} onRemove={(phone) => removePhone("exclude", phone)} /></div><section className="mt-5 rounded-2xl border border-[#e2d9dd] bg-[#fffafa] p-5"><div className="flex items-center gap-2"><Users size={17} className="text-[#c65762]" /><div><h3 className="text-base font-bold text-[#234a3d]">تفاعل مخصص لرقم محدد</h3><p className="mt-0.5 text-xs text-[#74877e]">يتجاوز التفاعل الافتراضي لهذا الرقم فقط، سواء كان وضعك للجميع أو للأرقام المحددة.</p></div></div><div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto]"><input value={customInput} onChange={(event) => setCustomInput(event.target.value)} dir="ltr" className="h-11 rounded-xl border border-[#e1d5d9] bg-white px-3 text-left text-sm outline-none placeholder:text-[#a9a7a5] focus:border-[#c65762] focus:ring-4 focus:ring-[#c65762]/10" placeholder="+9665XXXXXXXX" /><select value={customReaction} onChange={(event) => setCustomReaction(event.target.value)} className="h-11 rounded-xl border border-[#e1d5d9] bg-white px-3 text-center text-lg outline-none focus:border-[#c65762]">{reactions.map((reaction) => <option key={reaction}>{reaction}</option>)}</select><button onClick={addCustomReaction} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#c65762] px-4 text-xs font-bold text-white hover:bg-[#ae4651]"><Plus size={15} />تخصيص</button></div>{Object.keys(draft.customReactions).length > 0 && <div className="mt-4 flex flex-wrap gap-2">{Object.entries(draft.customReactions).map(([phone, reaction]) => <span key={phone} className="flex items-center gap-2 rounded-full border border-[#eccfd2] bg-white px-3 py-1.5 text-xs text-[#684b50]"><span dir="ltr">+{phone}</span><strong className="text-base">{reaction}</strong><button onClick={() => { const next = { ...draft.customReactions }; delete next[phone]; setDraft({ ...draft, customReactions: next }); }} className="text-[#b65861]" aria-label={`حذف تخصيص ${phone}`}><X size={13} /></button></span>)}</div>}</section>{error && <p className="mt-4 rounded-xl bg-[#fff0ec] p-3 text-xs leading-5 text-[#a44b33]">{error}</p>}<div className="mt-6 flex items-center justify-between border-t border-[#e6e8e2] pt-5"><button onClick={onClose} className="rounded-xl px-4 py-2.5 text-xs font-bold text-[#647c71] hover:bg-[#eff1eb]">إلغاء</button><button onClick={() => onSave(draft)} disabled={isBusy} className="flex items-center gap-2 rounded-xl bg-[#0e8065] px-5 py-2.5 text-xs font-bold text-white shadow-[0_8px_16px_rgba(14,128,101,0.16)] disabled:cursor-not-allowed disabled:opacity-55">{isBusy ? "جارٍ الحفظ..." : "حفظ إعدادات الحالات"}<Check size={15} /></button></div></div></div></div>;
+}
+
+function ToggleRow({ icon: Icon, title, detail, enabled, onClick }: { icon: typeof Eye; title: string; detail: string; enabled: boolean; onClick: () => void }) {
+  return <button onClick={onClick} className="flex w-full items-center gap-3 rounded-xl p-2 text-right hover:bg-white/60"><span className={`grid h-8 w-8 place-items-center rounded-lg ${enabled ? "bg-[#dceee4] text-[#0e8065]" : "bg-[#e8e9e4] text-[#82948b]"}`}><Icon size={16} /></span><span className="flex-1"><span className="block text-xs font-bold text-[#36584c]">{title}</span><span className="mt-0.5 block text-[11px] font-normal text-[#74877e]">{detail}</span></span><span className={`relative h-6 w-10 rounded-full p-0.5 ${enabled ? "bg-[#0e8065]" : "bg-[#c7cec9]"}`}><span className={`block h-5 w-5 rounded-full bg-white shadow-sm transition ${enabled ? "translate-x-0" : "-translate-x-4"}`} /></span></button>;
+}
+
+function PhoneListCard({ tone, title, detail, input, setInput, phones, onAdd, onRemove }: { tone: "emerald" | "sand"; title: string; detail: string; input: string; setInput: (value: string) => void; phones: string[]; onAdd: () => void; onRemove: (phone: string) => void }) {
+  const colors = tone === "emerald" ? "border-[#d5e8dc] bg-[#f4faf6] text-[#0e8065]" : "border-[#ecdfbd] bg-[#fffaf0] text-[#a37b2e]";
+  return <section className={`rounded-2xl border p-5 ${colors}`}><h3 className="text-sm font-bold text-[#36584c]">{title}</h3><p className="mt-1 text-xs leading-5 text-[#71857b]">{detail}</p><div className="mt-4 flex gap-2"><input value={input} onChange={(event) => setInput(event.target.value)} dir="ltr" className="h-10 min-w-0 flex-1 rounded-xl border border-current/20 bg-white px-3 text-left text-xs text-[#36584c] outline-none placeholder:text-[#a5b0aa]" placeholder="+9665XXXXXXXX" /><button onClick={onAdd} className="grid h-10 w-10 place-items-center rounded-xl bg-white/85 shadow-sm hover:bg-white" aria-label={`إضافة إلى ${title}`}><Plus size={16} /></button></div>{phones.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{phones.map((phone) => <span key={phone} className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs text-[#506f62]"><span dir="ltr">+{phone}</span><button onClick={() => onRemove(phone)} aria-label={`حذف ${phone}`}><Trash2 size={13} /></button></span>)}</div>}</section>;
+}

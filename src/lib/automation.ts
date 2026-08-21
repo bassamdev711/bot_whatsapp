@@ -4,12 +4,25 @@
  */
 import type { WASocket, WAMessage } from "@whiskeysockets/baileys";
 import { getRules } from "@/lib/rules";
+import { getStatusSettings, matchesStatusSettings, reactionForPhone } from "@/lib/status-settings";
 
 export async function applyAutomationRules({ socket, message, text, onAction }: { socket: WASocket; message: WAMessage; text: string; onAction: (label: string, detail: string) => void }) {
   const jid = message.key.remoteJid;
   const isStatus = jid === "status@broadcast";
   if (!jid || message.key.fromMe) return;
-  if (isStatus) return;
+
+  if (isStatus) {
+    const senderJid = message.key.participant ?? "";
+    const senderPhone = senderJid.split("@")[0].replace(/\D/g, "");
+    const settings = await getStatusSettings();
+    if (!matchesStatusSettings(settings, senderPhone)) return;
+    if (settings.markSeen) await socket.readMessages([message.key]);
+    if (settings.sendReaction) {
+      await socket.sendMessage(jid, { react: { text: reactionForPhone(settings, senderPhone), key: message.key } });
+    }
+    onAction("تمت معالجة حالة جديدة", `${settings.markSeen ? "تم تأكيد المشاهدة" : "لم يُرسل تأكيد مشاهدة"}${settings.sendReaction ? " وإرسال التفاعل المحدد." : "."}`);
+    return;
+  }
 
   const senderPhone = jid.split("@")[0].replace(/\D/g, "");
   const normalizedText = text.toLocaleLowerCase("ar");
