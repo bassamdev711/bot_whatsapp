@@ -6,6 +6,7 @@ import makeWASocket, {
   Browsers,
   DisconnectReason,
   fetchLatestBaileysVersion,
+  makeCacheableSignalKeyStore,
   type WASocket,
 } from "@whiskeysockets/baileys";
 import pino from "pino";
@@ -77,11 +78,15 @@ function publicSession(): PublicSession {
 async function openSocket(phone?: string) {
   const { state: auth, saveCreds } = await useNeonAuthState();
   const { version } = await fetchLatestBaileysVersion();
+  const logger = pino({ level: "silent" });
   const socket = makeWASocket({
-    auth,
+    auth: {
+      creds: auth.creds,
+      keys: makeCacheableSignalKeyStore(auth.keys, logger),
+    },
     version,
     browser: Browsers.ubuntu("Chrome"),
-    logger: pino({ level: "silent" }),
+    logger,
     printQRInTerminal: false,
     syncFullHistory: false,
     markOnlineOnConnect: false,
