@@ -91,8 +91,10 @@ export async function useNeonAuthState(): Promise<{
   saveCreds: () => Promise<void>;
 }> {
   const stored = unprotect(await readDocument<EncryptedPayload | DevelopmentPayload>(AUTH_DOCUMENT_KEY));
-  const credentials = stored?.creds ? deserialise<AuthenticationState["creds"]>(stored.creds) : initAuthCreds();
-  const keys = stored?.keys ? deserialise<Record<string, Record<string, unknown>>>(stored.keys) : {};
+  // unprotect already runs BufferJSON.reviver for the complete document. Running
+  // JSON.stringify/parse again would turn a restored Buffer into a plain object.
+  const credentials = (stored?.creds as AuthenticationState["creds"] | undefined) ?? initAuthCreds();
+  const keys = (stored?.keys as Record<string, Record<string, unknown>> | undefined) ?? {};
   let writes = Promise.resolve();
 
   const persist = () => {
