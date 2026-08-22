@@ -36,3 +36,47 @@
 - https://github.com/WhiskeySockets/Baileys/issues/2370
 - https://baileys.wiki/advanced/troubleshooting
 - https://baileys.wiki/concepts/socket-config
+
+## نتائج تحقيق مسار Render
+
+1. يؤكد توثيق Render أن الخدمات في المنطقة نفسها تشترك في نطاقات عناوين IP صادرة، وليست لها هوية خروج فريدة افتراضيًا.
+2. تؤكد سجلات العامل أن نسختي Baileys (7.0.0-rc14 و6.7.23) تفشلان بـ401 في Render، بينما تولّد 6.7.23 رمز QR محليًا بجلسة نظيفة. لذلك لا يفسر تغيير المكتبة وحده اختلاف البيئة.
+3. يدعم Baileys استخدام `agent` و`fetchAgent` لتمرير WebSocket وطلبات HTTP عبر وكيل، وتوثق Render إمكانية ضبط وكيل خارجي لمسار الخروج. هذا يمكن تنفيذه من داخل العامل نفسه، لكنه يحتاج وكيلًا موثوقًا خاصًا؛ لا يجوز استخدام وكيل مجاني عام لأنه قد يمرر بيانات مصادقة واتساب عبر طرف غير موثوق.
+4. تغيير منطقة خدمة Render لا يتم للخدمة الحالية مباشرة؛ يتطلب إنشاء خدمة بديلة في منطقة أخرى وفق توثيق Render. لا يُنفذ ذلك دون موافقة لأن بسّام طلب بقاء العامل الحالي كما هو.
+
+## المصادر الإضافية
+
+- https://render.com/docs/outbound-ip-addresses
+- https://render.com/docs/quotaguard
+- https://github.com/WhiskeySockets/Baileys/issues/2758
+- https://github.com/WhiskeySockets/Baileys/issues/1873
+- https://render.com/docs/regions
+
+## خيار مجاني مملوك للمستخدم
+
+يمكن إنشاء وكيل HTTP CONNECT صغير على آلة افتراضية Always Free في Oracle Cloud، ثم يبقى عامل Baileys في Render ويستعمل ذلك الوكيل لمسار WebSocket فقط. لا ينتقل Vercel أو Neon أو خدمة Render نفسها. توثق Oracle أن موارد Always Free تشمل مثيلات Compute دائمة في منطقة الحساب الأساسية، لكنها قد تستعيد مثيلًا خاملًا إذا ظل استخدام CPU والشبكة والذاكرة منخفضًا خلال سبعة أيام، ويستلزم التسجيل عادة رقم هاتف وبطاقة للتحقق من الهوية. هذا الخيار لا يضمن أن WhatsApp سيقبل عنوان Oracle، لكنه يغيّر عنوان الخروج من Render إلى عنوان يتحكم به بسّام من دون استخدام بروكسي عام مجهول.
+
+### مصادر Oracle
+
+- https://docs.oracle.com/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm
+- https://docs.oracle.com/iaas/Content/FreeTier/freetier.htm
+- https://www.oracle.com/cloud/free/faq/
+
+## مقارنة بدائل Render
+
+| المنصة | خيار عامل مستمر | وضع السعر للتحقق |
+|---|---|---|
+| Northflank | Sandbox يوفر خدمتين مجانيتين وحوسبة تعمل دائمًا | مجاني، لكنه يطلب وسيلة دفع للتحقق ولا يقدمه كخيار إنتاج مضمون. |
+| Railway | عامل Node.js مريح لكن كل CPU وذاكرة تحسب بالثانية | رصيد تجربة 5$ لمدة 30 يومًا ثم رصيد شهري 1$ لا يكفي غالبًا لتشغيل عامل متصل طوال الشهر. |
+| Fly.io | يشغل Machine مناسبًا لكن ليس لديه مسار مجاني دائم | يتطلب بطاقة؛ أصغر آلة مستمرة مدفوعة. |
+| Koyeb | حوسبة سحابية مناسبة، لكن التسعير الاستهلاكي المعروض لا يقدم عاملًا مجانيًا مستمرًا واضحًا | مدفوع للاستخدام المستمر. |
+| Oracle Always Free | آلة افتراضية مجانية مملوكة للمستخدم | مجاني مع تحقق بطاقة؛ إعداد يدوي أكثر. |
+
+Northflank هو الاختبار المجاني الأقرب لتجربة Render: لا وكيل، لا نقل Vercel أو Neon، وعنوان خروج مختلف عن Render.
+
+### مصادر المقارنة
+
+- https://northflank.com/pricing
+- https://northflank.com/docs/v1/application/billing/pricing-on-northflank
+- https://railway.com/pricing
+- https://fly.io/docs/about/pricing/

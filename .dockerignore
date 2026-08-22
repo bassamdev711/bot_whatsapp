@@ -1,0 +1,11 @@
+# وصلة — تقليل سياق بناء حاوية عامل Northflank.
+node_modules
+.next
+dist
+.git
+.wasla-session
+.env
+.env.*
+.manus-logs
+npm-debug.log*
+pnpm-debug.log*
