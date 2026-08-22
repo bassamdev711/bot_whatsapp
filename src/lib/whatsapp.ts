@@ -136,14 +136,21 @@ async function openSocket(phone?: string) {
       const code = disconnectError?.output?.statusCode;
       const loggedOut = code === DisconnectReason.loggedOut;
       const diagnostic = code ? `رمز الاتصال ${code}` : "رمز الاتصال غير معروف";
+      const retainPairingCode = loggedOut && Boolean(state.pairingCode) && Boolean(state.phone);
       console.error("Wasla WhatsApp socket closed", {
         code,
         name: disconnectError?.name,
         message: disconnectError?.message,
         stack: disconnectError?.stack,
       });
-      update({ socket: null, status: loggedOut ? "idle" : "error", qrDataUrl: null, pairingCode: null, error: loggedOut ? null : `انقطع الاتصال مؤقتًا (${diagnostic}). يُعاد الاتصال تلقائيًا.` });
-      logEvent("session.closed", loggedOut ? "تم تسجيل الخروج" : "انقطع الاتصال", loggedOut ? "حُذفت الجلسة من واتساب." : `${diagnostic}. يجري استئناف الاتصال تلقائيًا.`);
+      update({
+        socket: null,
+        status: retainPairingCode ? "awaiting_pairing" : loggedOut ? "idle" : "error",
+        qrDataUrl: null,
+        pairingCode: retainPairingCode ? state.pairingCode : null,
+        error: retainPairingCode ? "كود الربط جاهز. أدخله الآن من الأجهزة المرتبطة على هاتفك." : loggedOut ? null : `انقطع الاتصال مؤقتًا (${diagnostic}). يُعاد الاتصال تلقائيًا.`,
+      });
+      logEvent("session.closed", retainPairingCode ? "كود الربط بانتظار الإدخال" : loggedOut ? "تم تسجيل الخروج" : "انقطع الاتصال", retainPairingCode ? "أُرسل كود الربط إلى الهاتف؛ أدخله من الأجهزة المرتبطة." : loggedOut ? "حُذفت الجلسة من واتساب." : `${diagnostic}. يجري استئناف الاتصال تلقائيًا.`);
       if (!loggedOut) {
         setTimeout(() => {
           if (!state.socket && !state.connecting) void restoreSession().catch(() => { /* A new user action can retry. */ });
