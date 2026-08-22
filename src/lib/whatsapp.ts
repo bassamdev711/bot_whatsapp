@@ -3,6 +3,7 @@
  * encrypted Baileys credentials in Neon so a restart does not lose the QR session.
  */
 import makeWASocket, {
+  Browsers,
   DisconnectReason,
   fetchLatestBaileysVersion,
   type WASocket,
@@ -79,10 +80,12 @@ async function openSocket(phone?: string) {
   const socket = makeWASocket({
     auth,
     version,
+    browser: Browsers.ubuntu("Chrome"),
     logger: pino({ level: "silent" }),
     printQRInTerminal: false,
     syncFullHistory: false,
     markOnlineOnConnect: false,
+    connectTimeoutMs: 60_000,
     generateHighQualityLinkPreview: false,
   });
 
